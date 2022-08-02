@@ -36,12 +36,11 @@ class Event(object):
 
     def menu(plugin_event:OlivOS.API.Event, Proc:OlivOS.pluginAPI.shallow):
         if(platform.system() == 'Windows'):
-            if plugin_event.data.namespace == 'OlivaDiceNativeGUI':
-                if plugin_event.data.event == 'OlivaDiceNativeGUI_001':
-                    if not OlivaDiceNativeGUI.load.flag_open:
-                        OlivaDiceNativeGUI.load.flag_open = True
-                        OlivaDiceNativeGUI.GUI.ConfigUI(
-                            Model_name = 'OlivaDiceNativeGUI_manage',
-                            logger_proc = Proc.Proc_info.logger_proc.log
-                        ).start()
-                    pass
+            if plugin_event.data.event == 'OlivaDiceNativeGUI_001':
+                if not OlivaDiceNativeGUI.load.flag_open:
+                    OlivaDiceNativeGUI.load.flag_open = True
+                    OlivaDiceNativeGUI.GUI.ConfigUI(
+                        Model_name = 'OlivaDiceNativeGUI_manage',
+                        logger_proc = Proc.Proc_info.logger_proc.log
+                    ).start()
+                pass
