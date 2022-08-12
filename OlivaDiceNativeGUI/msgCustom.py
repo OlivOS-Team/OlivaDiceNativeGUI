@@ -32,6 +32,7 @@ dictTValue = {}
 dictHelpDocTemp = {}
 
 dictStrCustomNote = {
+    # OlivaDiceCore
     'strBotName': '机器人的自称',
     'strForGroupOnly': '当在非群聊场景调用功能时回复的缺省语句',
     'strSetStr': '更新 str 回复词时的回复',
@@ -53,7 +54,6 @@ dictStrCustomNote = {
     'strMasterRemoteDefaultOnAlready': '尝试远程默认开启，但已经默认开启时的回复词',
     'strMasterRemoteDefaultOffAlready': '尝试远程默认关闭，但已经默认关闭时的回复词',
     'strMasterRemoteNone': '尝试远程设置但未找到对应的记录时的回复词',
-    
     'strNeedMaster': '没有Master权限却触发了相关指令时的提示',
     'strHello': '入群后的打招呼消息，目前未实现，预留',
     'strBot': '【.bot】指令\n回复的主要信息',
@@ -90,6 +90,7 @@ dictStrCustomNote = {
     'strDrawDeckHideShow' : '【.drawh】指令\n牌堆暗抽取的回复词（群内）',
     'strDrawDeckRecommend' : '【.draw/.drawh】指令\n牌堆抽取的回复词（结果）',
     'strDrawDeckNotFound' : '【.draw/.drawh】指令\n牌堆抽取的回复词（结果）',
+    'strRollRecord' : '【.rr】指令\n重放掷骰时的回复词',
     'strRoll' : '【.r】等指令\n掷骰时的回复词',
     'strRollWithReason' : '【.r】等指令\n带理由掷骰时的回复词',
     'strRollHide' : '【.rh】等指令\n掷暗骰时的回复词（结果）',
@@ -188,7 +189,55 @@ dictStrCustomNote = {
     'strObExit' : '【.ob/.ob exit】指令\n退出旁观',
     'strObExitAlready' : '【.ob/.ob exit】指令\n不在旁观中',
     'strObExitAll' : '【.ob exit all】指令\n退出所有旁观',
-    'strObClear' : '【.ob clear】指令\n清空旁观列表'
+    'strObClear' : '【.ob clear】指令\n清空旁观列表',
+
+    # OlivaDiceJoy
+    'strJoyJrrp': '【.jrrp】指令\n今日人品',
+    'strJoyZrrp': '【.zrrp】指令\n昨日人品',
+    'strJoyMrrp': '【.mrrp】指令\n明日人品',
+
+    # OlivaDiceLogger
+    'strLoggerLogOn': '【.log on】指令\n开始日志记录',
+    'strLoggerLogAlreadyOn': '【.log on】指令\n已经正在进行日志记录',
+    'strLoggerLogContinue': '【.log on】指令\n继续日志记录',
+    'strLoggerLogOff': '【.log off】指令\n暂停日志记录',
+    'strLoggerLogAlreadyOff': '【.log off】指令\n当前没有正在进行的日志记录',
+    'strLoggerLogEnd': '【.log end】指令\n停止日志记录',
+    'strLoggerLogAlreadyEnd': '【.log end】指令\n当前没有日志记录',
+    'strLoggerLogSave': '【.log end】指令\n日志已保存',
+    'strLoggerLogUrl': '【.log end】指令\n日志已上传',
+
+    # OlivaDiceMaster
+    'strMasterReply': '',
+    'strMasterOopmApiFailed': '【.oopm】指令\n更新源访问失败',
+    'strMasterOopmNotMatch': '【.oopm】指令\n未找到匹配的条目',
+    'strMasterOopmDownload': '【.oopm】指令\n模块已下载成功',
+    'strMasterOopmCopy': '【.oopm】指令\n模块已安装成功',
+    'strMasterOopmUpdate': '【.oopm update】指令\n模块已更新成功',
+    'strMasterOopmUpdateAllDone': '【.oopm update】指令\n单个更新成功，即将重载',
+    'strMasterOopmUpdateNotNeed': '【.oopm update】指令\n所有模块已为最新版本',
+    'strMasterOopmUpdateNotSkipSrc': '【.oopm update】指令\n模块为手动部署模式，已跳过',
+    'strMasterOopmUpdateNotSkipDev': '【.oopm update】指令\n模块为开发模式，已跳过',
+    'strMasterOopmGet': '【.oopm get】指令\n模块已安装成功',
+    'strMasterOopmGetNone': '【.oopm get】指令\n模块不存在',
+    'strMasterOopmGetSkipSrc': '【.oopm get】指令\n跳过手动部署模块',
+    'strMasterOopmDownloadFailed': '【.oopm】指令\n模块下载失败',
+    'strMasterOopmCopyFailed': '【.oopm】指令\n模块安装失败',
+    'strMasterSendFromMaster': '【.send】指令\n来自Master的消息',
+    'strMasterSendToMaster': '【.send】指令\n来自用户的消息',
+    'strMasterSendToMasterAlready': '【.send】指令\n已将消息发送至Master',
+    'strMasterTrustSet': '【.trust】指令\n设置信任相关设置',
+    'strMasterTrustGet': '【.trust】指令\n查看信任相关设置',
+    'strMasterPlatformNo': '该功能在此平台不受支持',
+    'strMasterGroupClearShow': '【.group clear】指令\n清群列表',
+    'strMasterGroupClearDoUnit': '【.group clear do】指令\n已经清除群提示',
+    'strMasterGroupClearDoUnitSend': '【.group clear do】指令\n被清除群内退群前最后的提示',
+    'strMasterGroupClearDo': '【.group clear do】指令\n清除群后的总结',
+    'strMasterGroupClearUnit': '【.group clear】指令\n每条群记录的格式',
+    
+    # OlivaDiceOdyssey
+    'strOdysseyCnmodsSearch': '【.cnmods search】指令\n魔都模组搜索',
+    'strOdysseyCnmodsLuck': '【.cnmods luck】指令\n魔都模组抽取'
 }
 
 dictConsoleSwitchNote = {
@@ -203,5 +252,6 @@ dictConsoleSwitchNote = {
     'messageSplitPageLimit' : '分页上限，超过此数量的页面将不再被发送',
     'messageSplitDelay' : '分页延迟，每个分页间将会等待如此长时间再次发送，单位为毫秒',
     'largeRollLimit' : '大型掷骰细节长度限制\n用于控制诸如ww和dx指令的细节显示\n超过将不显示细节',
-    'joyPokeMode' : '戳一戳回复模式\n 0 返回默认版本号\n 1 进行一次默认骰掷骰\n 2 进行一次今日人品查询'
+    'randomMode' : '随机数生成模式\n 0 默认的尽量使用真随机数\n 1 强制使用本地生成的伪随机数',
+    'joyPokeMode' : '戳一戳回复模式\n 0 返回默认版本号\n 1 进行一次默认骰掷骰\n 2 进行一次今日人品查询\n 3 关闭回复'
 }
