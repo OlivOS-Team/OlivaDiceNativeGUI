@@ -15,6 +15,6 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 '''
 
 
-OlivaDiceNativeGUI_ver = '3.0.3'
-OlivaDiceNativeGUI_svn = 4
+OlivaDiceNativeGUI_ver = '3.0.7'
+OlivaDiceNativeGUI_svn = 8
 OlivaDiceNativeGUI_ver_short = '%s(%s)' % (str(OlivaDiceNativeGUI_ver), str(OlivaDiceNativeGUI_svn))
