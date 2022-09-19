@@ -27,6 +27,7 @@ class Event(object):
         pass
 
     def init_after(plugin_event:OlivOS.API.Event, Proc:OlivOS.pluginAPI.shallow):
+        OlivaDiceNativeGUI.load.globalProc = Proc
         OlivaDiceCore.crossHook.dictHookList['model'].append(['OlivaDiceNativeGUI', OlivaDiceNativeGUI.data.OlivaDiceNativeGUI_ver_short])
         OlivaDiceNativeGUI.load.listPlugin = Proc.get_plugin_list()
         OlivaDiceNativeGUI.load.dictBotInfo = Proc.Proc_data['bot_info_dict']
@@ -37,10 +38,9 @@ class Event(object):
     def menu(plugin_event:OlivOS.API.Event, Proc:OlivOS.pluginAPI.shallow):
         if(platform.system() == 'Windows'):
             if plugin_event.data.event == 'OlivaDiceNativeGUI_001':
-                if not OlivaDiceNativeGUI.load.flag_open:
+                if not OlivaDiceNativeGUI.load.flag_open or True:
                     OlivaDiceNativeGUI.load.flag_open = True
                     OlivaDiceNativeGUI.GUI.ConfigUI(
                         Model_name = 'OlivaDiceNativeGUI_manage',
                         logger_proc = Proc.Proc_info.logger_proc.log
                     ).start()
-                pass

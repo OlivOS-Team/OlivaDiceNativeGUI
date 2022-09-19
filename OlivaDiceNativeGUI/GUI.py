@@ -57,7 +57,7 @@ class ConfigUI(object):
         self.UIConfig.update(dictColorContext)
 
     def start(self):
-        self.UIObject['root'] = tkinter.Tk()
+        self.UIObject['root'] = tkinter.Toplevel()
         self.UIObject['root'].title('OlivaDice 设置面板')
         self.UIObject['root'].geometry('800x600')
         self.UIObject['root'].minsize(800, 600)
@@ -98,7 +98,7 @@ class ConfigUI(object):
 
         self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
         self.UIObject['root'].mainloop()
-        OlivaDiceNativeGUI.load.flag_open = False
+        #OlivaDiceNativeGUI.load.flag_open = False
 
     def init_hash_Combobox(self):
         self.UIData['hash_Combobox_root_StringVar'] = tkinter.StringVar()
@@ -150,8 +150,11 @@ class ConfigUI(object):
             self.init_data_total()
 
     def init_notebook(self):
-        self.UIData['style'] = ttk.Style()
-        self.UIData['style'].element_create('Plain.Notebook.tab', "from", 'default')
+        self.UIData['style'] = ttk.Style(self.UIObject['root'])
+        try:
+            self.UIData['style'].element_create('Plain.Notebook.tab', "from", 'default')
+        except:
+            pass
         self.UIData['style'].layout(
             "TNotebook.Tab",
             [('Plain.Notebook.tab', {'children':
