@@ -68,6 +68,7 @@ class ConfigUI(object):
         self.UIObject['root'].grid_rowconfigure(0, weight = 0)
         self.UIObject['root'].grid_rowconfigure(1, weight = 15)
         self.UIObject['root'].grid_columnconfigure(0, weight = 15)
+        self.UIObject['root'].grid_columnconfigure(1, weight = 15)
         self.UIObject['root'].configure(bg = self.UIConfig['color_001'])
 
         self.UIData['hash_now'] = 'unity'
@@ -86,7 +87,6 @@ class ConfigUI(object):
         self.init_frame_console()
 
         # 骰主列表
-        # 还没写
         self.init_frame_master()
 
         self.UIObject['Notebook_root'].add(self.UIObject['frame_main_root'], text="首页")
@@ -144,6 +144,27 @@ class ConfigUI(object):
         )
         self.UIObject['hash_Combobox_root'].bind('<<ComboboxSelected>>', lambda x : self.Combobox_ComboboxSelected(x, 'set', 'hash_Combobox_root'))
 
+        self.UIData['onlineStatus_Label_root_StringVar'] = tkinter.StringVar()
+        self.UIObject['onlineStatus_Label_root'] = tkinter.Label(
+            self.UIObject['root'],
+            textvariable = self.UIData['onlineStatus_Label_root_StringVar']
+        )
+        self.UIObject['onlineStatus_Label_root'].configure(
+            bg = self.UIConfig['color_001'],
+            fg = self.UIConfig['color_004']
+        )
+        self.UIObject['onlineStatus_Label_root'].grid(
+            row = 0,
+            column = 1,
+            sticky = "nse",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (0, 15),
+            pady = (15, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+
     def Combobox_ComboboxSelected(self, action, event, target):
         if target == 'hash_Combobox_root':
             self.UIData['hash_now'] = self.UIData['hash_find'][self.UIData['hash_Combobox_root_StringVar'].get()]
@@ -198,7 +219,7 @@ class ConfigUI(object):
             column = 0,
             sticky = "nsew",
             rowspan = 1,
-            columnspan = 1,
+            columnspan = 2,
             padx = (15, 15),
             pady = (8, 15),
             ipadx = 0,
@@ -1102,6 +1123,8 @@ class ConfigUI(object):
 
     def init_data_total(self):
         tmp_hashSelection = self.UIData['hash_now']
+
+        self.UIData['onlineStatus_Label_root_StringVar'].set('当前在线: %s' % OlivaDiceNativeGUI.load.onlineAPICount)
 
         tmp_tree_item_children = self.UIObject['tree_str'].get_children()
         for tmp_tree_item_this in tmp_tree_item_children:

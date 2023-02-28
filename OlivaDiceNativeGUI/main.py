@@ -19,6 +19,7 @@ import OlivaDiceCore
 import OlivaDiceNativeGUI
 
 import platform
+import threading
 
 version = '0.1.1'
 
@@ -31,6 +32,11 @@ class Event(object):
         OlivaDiceCore.crossHook.dictHookList['model'].append(['OlivaDiceNativeGUI', OlivaDiceNativeGUI.data.OlivaDiceNativeGUI_ver_short])
         OlivaDiceNativeGUI.load.listPlugin = Proc.get_plugin_list()
         OlivaDiceNativeGUI.load.dictBotInfo = Proc.Proc_data['bot_info_dict']
+
+        threading.Thread(
+            target = OlivaDiceNativeGUI.load.checkOnlineStatusLoop,
+            args = ()
+        ).start()
 
     def save(plugin_event:OlivOS.API.Event, Proc:OlivOS.pluginAPI.shallow):
         pass
