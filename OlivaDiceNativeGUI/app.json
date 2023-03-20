@@ -4,8 +4,8 @@
     "namespace" : "OlivaDiceNativeGUI",
     "info" : "本模块为OlivaDice的传统UI模块，可以对骰子进行简单的可视化设置。",
     "priority" : 20050,
-    "version" : "3.0.12",
-    "svn" : 13,
+    "version" : "3.0.13",
+    "svn" : 14,
     "compatible_svn" : 101,
     "message_mode" : "old_string",
     "support" : [
