@@ -285,6 +285,7 @@ dictConsoleSwitchNote = {
     'messageSplitPageLimit' : '分页上限，超过此数量的页面将不再被发送',
     'messageSplitDelay' : '分页延迟，每个分页间将会等待如此长时间再次发送，单位为毫秒',
     'largeRollLimit' : '大型掷骰细节长度限制\n用于控制诸如ww和dx指令的细节显示\n超过将不显示细节',
+    'multiRollDetail' : '多重掷骰细节模式\n用于控制r指令的多重掷骰细节显示\n 0 不显示细节\n 1 显示每次掷骰的细节(默认)',
     'randomMode' : '随机数生成模式\n 0 默认的尽量使用真随机数\n 1 强制使用本地生成的伪随机数',
     'drawRecommendMode' : '牌堆抽取推荐模式\n 0 关闭模糊匹配推荐\n 1 开启常规模糊匹配推荐',
     'drawListMode' : '牌堆帮助文档模式\n 0 关闭自动生成牌堆帮助文档\n 1 生成传统模式的牌堆帮助文档\n 2 生成新版的牌堆帮助文档\n 3 生成新版紧凑的牌堆帮助文档',
