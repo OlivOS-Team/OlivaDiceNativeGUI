@@ -270,7 +270,8 @@ dictStrCustomNote = {
     'strOdysseyRulesShow': '【.rules】指令\n规则速查结果',
     'strOdysseyRulesList': '【.rules】指令\n规则速查待选结果',
     'strOdysseyRulesSplit': '【.rules】指令\n待选结果分隔符，默认为一个换行',
-    'strOdysseyRulesError': '【.rules】指令\n规则速查发生错误'
+    'strOdysseyRulesError': '【.rules】指令\n规则速查发生错误',
+    'strOdysseyKOOKBotMarketPulseUUID': 'KOOK机器人服务平台心跳对接UUID'
 }
 
 dictConsoleSwitchNote = {
@@ -295,5 +296,6 @@ dictConsoleSwitchNote = {
     'joyPokeMode' : '戳一戳回复模式\n 0 返回默认版本号\n 1 进行一次默认骰掷骰\n 2 进行一次今日人品查询\n 3 关闭回复',
     'joyEnableCCPK' : '是否对回复词启用程心自定义解析\n 0 默认原版\n 1 开启程心自定义解析',
     'masterAutoUpdate' : '是否进行自动更新\n 0 关闭自动更新\n 1 开启自动更新',
-    'odysseyRulesItemLimit' : '规则速查单页显示条目数量上限'
+    'odysseyRulesItemLimit' : '规则速查单页显示条目数量上限',
+    'odysseyKOOKBotMarketPulseEnable' : '是否启用KOOK机器人服务平台心跳对接, 默认关闭\n 0 关闭\n 1 开启'
 }
