@@ -271,7 +271,10 @@ dictStrCustomNote = {
     'strOdysseyRulesList': '【.rules】指令\n规则速查待选结果',
     'strOdysseyRulesSplit': '【.rules】指令\n待选结果分隔符，默认为一个换行',
     'strOdysseyRulesError': '【.rules】指令\n规则速查发生错误',
-    'strOdysseyKOOKBotMarketPulseUUID': 'KOOK机器人服务平台心跳对接UUID'
+    'strOdysseyKOOKBotMarketPulseUUID': 'KOOK机器人服务平台心跳对接UUID',
+    'strOdysseyKOOKPlayGameMusicName': 'KOOK在听音乐名称',
+    'strOdysseyKOOKPlayGameMusicSinger': 'KOOK在听音乐歌手',
+    'strOdysseyKOOKPlayGameID': 'KOOK在玩游戏ID\n需要提前了解对应游戏的ID',
 }
 
 dictConsoleSwitchNote = {
@@ -297,5 +300,7 @@ dictConsoleSwitchNote = {
     'joyEnableCCPK' : '是否对回复词启用程心自定义解析\n 0 默认原版\n 1 开启程心自定义解析',
     'masterAutoUpdate' : '是否进行自动更新\n 0 关闭自动更新\n 1 开启自动更新',
     'odysseyRulesItemLimit' : '规则速查单页显示条目数量上限',
-    'odysseyKOOKBotMarketPulseEnable' : '是否启用KOOK机器人服务平台心跳对接, 默认关闭\n 0 关闭\n 1 开启'
+    'odysseyKOOKBotMarketPulseEnable' : '是否启用KOOK机器人服务平台心跳对接, 默认关闭\n 0 关闭\n 1 开启',
+    'odysseyKOOKPlayGameMode': '在玩游戏/听音乐模式\n 0 关闭\n 1 正在玩 青果核心OlivaDice\n 2 正在听音乐 歌名、歌手可用对应str设置\n 3 正在玩游戏 游戏ID可用对应str设置',
+    'odysseyKOOKPlayGameMusicSoftware': '在玩听音乐的平台, 默认网易云\n 0 网易云\n 1 QQ音乐\n 2 酷狗音乐'
 }
