@@ -17,12 +17,14 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 import OlivOS
 import OlivaDiceNativeGUI
 import OlivaDiceCore
+import OlivaDiceOdyssey
 
 import base64
 import os
 import tkinter
 from tkinter import ttk
 import webbrowser
+import traceback
 
 from PIL import Image
 from PIL import ImageTk
@@ -89,7 +91,12 @@ class ConfigUI(object):
         # 骰主列表
         self.init_frame_master()
 
+        # 牌堆管理
+        self.UIData['deck_remote_loaded_flag'] = False
+        self.init_frame_deck()
+
         self.UIObject['Notebook_root'].add(self.UIObject['frame_main_root'], text="首页")
+        self.UIObject['Notebook_root'].add(self.UIObject['frame_deck_root'], text="牌堆管理")
         self.UIObject['Notebook_root'].add(self.UIObject['frame_str_root'], text="回复词")
         self.UIObject['Notebook_root'].add(self.UIObject['frame_console_root'], text="配置项")
         self.UIObject['Notebook_root'].add(self.UIObject['frame_master_root'], text="骰主列表")
@@ -228,6 +235,7 @@ class ConfigUI(object):
         self.UIObject['Notebook_root'].grid_rowconfigure(0, weight = 0)
         self.UIObject['Notebook_root'].grid_rowconfigure(1, weight = 15)
         self.UIObject['Notebook_root'].grid_columnconfigure(0, weight = 15)
+        self.UIObject['Notebook_root'].bind('<<NotebookTabChanged>>', lambda x : self.onNotebookTabChanged(x))
 
     def init_frame_main(self):
         self.UIObject['frame_main_root'] = tkinter.Frame(self.UIObject['Notebook_root'])
@@ -813,10 +821,455 @@ class ConfigUI(object):
             ipady = 0
         )
 
+    def init_frame_deck(self):
+        self.UIObject['frame_deck_root'] = tkinter.Frame(self.UIObject['Notebook_root'])
+        self.UIObject['frame_deck_root'].configure(relief = tkinter.FLAT)
+        self.UIObject['frame_deck_root'].grid(
+            row = 1,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+        self.UIObject['frame_deck_root'].grid_rowconfigure(0, weight = 0)
+        self.UIObject['frame_deck_root'].grid_rowconfigure(1, weight = 0)
+        self.UIObject['frame_deck_root'].grid_rowconfigure(2, weight = 0)
+        self.UIObject['frame_deck_root'].grid_rowconfigure(3, weight = 0)
+        self.UIObject['frame_deck_root'].grid_rowconfigure(4, weight = 0)
+        self.UIObject['frame_deck_root'].grid_rowconfigure(5, weight = 0)
+        self.UIObject['frame_deck_root'].grid_rowconfigure(6, weight = 1)
+        self.UIObject['frame_deck_root'].grid_rowconfigure(7, weight = 15)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(0, weight = 15)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(1, weight = 0)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(2, weight = 7)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(3, weight = 1)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(4, weight = 7)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(5, weight = 15)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(6, weight = 0)
+        tmp_tree_rowspan = 7
+        self.UIObject['frame_deck_root'].configure(bg = self.UIConfig['color_001'], borderwidth = 0)
+        self.UIData['deck_local_now'] = None
+        self.UIData['deck_remote_now'] = None
+
+        self.UIObject['label_deck_local_note'] = tkinter.Label(
+            self.UIObject['frame_deck_root'],
+            text = '本地牌堆'
+        )
+        self.UIObject['label_deck_local_note'].configure(
+            bg = self.UIConfig['color_001'],
+            fg = self.UIConfig['color_004'],
+            font = ('等线', 12)
+        )
+        self.UIObject['label_deck_local_note'].grid(
+            row = 0,
+            column = 0,
+            sticky = "nw",
+            rowspan = 1,
+            columnspan = 9,
+            padx = (0, 0),
+            pady = (10, 5),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['tree_deck_local'] = ttk.Treeview(self.UIObject['frame_deck_root'])
+        self.UIObject['tree_deck_local']['show'] = 'headings'
+        self.UIObject['tree_deck_local']['columns'] = ('KEY')
+        self.UIObject['tree_deck_local'].column('KEY', width = 50)
+        self.UIObject['tree_deck_local'].heading('KEY', text = '牌堆名')
+        self.UIObject['tree_deck_local'].grid(
+            row = 1,
+            column = 0,
+            sticky = "nsew",
+            rowspan = tmp_tree_rowspan,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+        #self.UIObject['tree_rightkey_menu'] = tkinter.Menu(self.UIObject['root'], tearoff = False)
+        #self.UIObject['tree_master'].bind('<Button-3>', lambda x : self.tree_master_rightKey(x))
+        self.UIObject['tree_deck_local'].bind('<<TreeviewSelect>>', lambda x : self.treeSelect('tree_deck_local', x))
+        self.UIObject['tree_deck_local_yscroll'] = ttk.Scrollbar(
+            self.UIObject['frame_deck_root'],
+            orient = "vertical",
+            command = self.UIObject['tree_deck_local'].yview
+        )
+        self.UIObject['tree_deck_local'].configure(
+            yscrollcommand = self.UIObject['tree_deck_local_yscroll'].set
+        )
+        self.UIObject['tree_deck_local_yscroll'].grid(
+            row = 1,
+            column = 1,
+            sticky = "nsw",
+            rowspan = tmp_tree_rowspan,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['buttom_deck_reload'] = tkinter.Button(
+            self.UIObject['frame_deck_root'],
+            text = '重载牌堆',
+            command = self.reloadDeck_local_gen(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+        )
+        self.UIObject['buttom_deck_reload'].configure(
+            font = ('等线', 12)
+        )
+        self.UIObject['buttom_deck_reload'].bind('<Enter>', lambda x : self.buttom_action('buttom_deck_reload', '<Enter>'))
+        self.UIObject['buttom_deck_reload'].bind('<Leave>', lambda x : self.buttom_action('buttom_deck_reload', '<Leave>'))
+        self.UIObject['buttom_deck_reload'].grid(
+            row = 1,
+            column = 2,
+            sticky = "new",
+            rowspan = 1,
+            columnspan = 3,
+            padx = (15, 15),
+            pady = (0, 2),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['buttom_deck_remove'] = tkinter.Button(
+            self.UIObject['frame_deck_root'],
+            text = '删除牌堆 ×',
+            command = self.removeDeck_gen(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+        )
+        self.UIObject['buttom_deck_remove'].configure(
+            font = ('等线', 12)
+        )
+        self.UIObject['buttom_deck_remove'].bind('<Enter>', lambda x : self.buttom_action('buttom_deck_remove', '<Enter>'))
+        self.UIObject['buttom_deck_remove'].bind('<Leave>', lambda x : self.buttom_action('buttom_deck_remove', '<Leave>'))
+        self.UIObject['buttom_deck_remove'].grid(
+            row = 2,
+            column = 2,
+            sticky = "new",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (15, 2),
+            pady = (2, 2),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['buttom_deck_dir_unity'] = tkinter.Button(
+            self.UIObject['frame_deck_root'],
+            text = '打开全局目录',
+            command = self.openDeckPath_gen(flagUnity = True),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+        )
+        self.UIObject['buttom_deck_dir_unity'].configure(
+            font = ('等线', 12)
+        )
+        self.UIObject['buttom_deck_dir_unity'].bind('<Enter>', lambda x : self.buttom_action('buttom_deck_dir_unity', '<Enter>'))
+        self.UIObject['buttom_deck_dir_unity'].bind('<Leave>', lambda x : self.buttom_action('buttom_deck_dir_unity', '<Leave>'))
+        self.UIObject['buttom_deck_dir_unity'].grid(
+            row = 5,
+            column = 2,
+            sticky = "new",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (15, 2),
+            pady = (60, 2),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['buttom_deck_dir_this'] = tkinter.Button(
+            self.UIObject['frame_deck_root'],
+            text = '打开本机目录',
+            command = self.openDeckPath_gen(flagUnity = False),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+        )
+        self.UIObject['buttom_deck_dir_this'].configure(
+            font = ('等线', 12)
+        )
+        self.UIObject['buttom_deck_dir_this'].bind('<Enter>', lambda x : self.buttom_action('buttom_deck_dir_this', '<Enter>'))
+        self.UIObject['buttom_deck_dir_this'].bind('<Leave>', lambda x : self.buttom_action('buttom_deck_dir_this', '<Leave>'))
+        self.UIObject['buttom_deck_dir_this'].grid(
+            row = 6,
+            column = 2,
+            sticky = "new",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (15, 2),
+            pady = (2, 2),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['buttom_deck_install_unity'] = tkinter.Button(
+            self.UIObject['frame_deck_root'],
+            text = '安装至全局 <<',
+            command = self.installDeck_gen(flagUnity = True),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+        )
+        self.UIObject['buttom_deck_install_unity'].configure(
+            font = ('等线', 12)
+        )
+        self.UIObject['buttom_deck_install_unity'].bind('<Enter>', lambda x : self.buttom_action('buttom_deck_install_unity', '<Enter>'))
+        self.UIObject['buttom_deck_install_unity'].bind('<Leave>', lambda x : self.buttom_action('buttom_deck_install_unity', '<Leave>'))
+        self.UIObject['buttom_deck_install_unity'].grid(
+            row = 2,
+            column = 4,
+            sticky = "new",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (2, 15),
+            pady = (2, 2),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['buttom_deck_install_this'] = tkinter.Button(
+            self.UIObject['frame_deck_root'],
+            text = '安装至本机 <<',
+            command = self.installDeck_gen(flagUnity = False),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+        )
+        self.UIObject['buttom_deck_install_this'].configure(
+            font = ('等线', 12)
+        )
+        self.UIObject['buttom_deck_install_this'].bind('<Enter>', lambda x : self.buttom_action('buttom_deck_install_this', '<Enter>'))
+        self.UIObject['buttom_deck_install_this'].bind('<Leave>', lambda x : self.buttom_action('buttom_deck_install_this', '<Leave>'))
+        self.UIObject['buttom_deck_install_this'].grid(
+            row = 3,
+            column = 4,
+            sticky = "new",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (2, 15),
+            pady = (2, 2),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['buttom_deck_upload'] = tkinter.Button(
+            self.UIObject['frame_deck_root'],
+            text = '上传牌堆',
+            command = self.uploadDeckUrl_gen(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+        )
+        self.UIObject['buttom_deck_upload'].configure(
+            font = ('等线', 12)
+        )
+        self.UIObject['buttom_deck_upload'].bind('<Enter>', lambda x : self.buttom_action('buttom_deck_upload', '<Enter>'))
+        self.UIObject['buttom_deck_upload'].bind('<Leave>', lambda x : self.buttom_action('buttom_deck_upload', '<Leave>'))
+        self.UIObject['buttom_deck_upload'].grid(
+            row = 6,
+            column = 4,
+            sticky = "new",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (2, 15),
+            pady = (2, 2),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['label_deck_remote_note'] = tkinter.Label(
+            self.UIObject['frame_deck_root'],
+            text = '牌堆市场 ☁'
+        )
+        self.UIObject['label_deck_remote_note'].configure(
+            bg = self.UIConfig['color_001'],
+            fg = self.UIConfig['color_004'],
+            font = ('等线', 12)
+        )
+        self.UIObject['label_deck_remote_note'].grid(
+            row = 0,
+            column = 5,
+            sticky = "nw",
+            rowspan = 1,
+            columnspan = 9,
+            padx = (0, 0),
+            pady = (10, 5),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['tree_deck_remote'] = ttk.Treeview(self.UIObject['frame_deck_root'])
+        self.UIObject['tree_deck_remote']['show'] = 'headings'
+        self.UIObject['tree_deck_remote']['columns'] = ('KEY', 'AUTHOR')
+        self.UIObject['tree_deck_remote'].column('KEY', width = 35)
+        self.UIObject['tree_deck_remote'].column('AUTHOR', width = 15)
+        self.UIObject['tree_deck_remote'].heading('KEY', text = '牌堆名')
+        self.UIObject['tree_deck_remote'].heading('AUTHOR', text = '作者')
+        self.UIObject['tree_deck_remote'].grid(
+            row = 1,
+            column = 5,
+            sticky = "nsew",
+            rowspan = tmp_tree_rowspan,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+        #self.UIObject['tree_rightkey_menu'] = tkinter.Menu(self.UIObject['root'], tearoff = False)
+        #self.UIObject['tree_master'].bind('<Button-3>', lambda x : self.tree_master_rightKey(x))
+        self.UIObject['tree_deck_remote'].bind('<<TreeviewSelect>>', lambda x : self.treeSelect('tree_deck_remote', x))
+        self.UIObject['tree_deck_remote_yscroll'] = ttk.Scrollbar(
+            self.UIObject['frame_deck_root'],
+            orient = "vertical",
+            command = self.UIObject['tree_deck_remote'].yview
+        )
+        self.UIObject['tree_deck_remote'].configure(
+            yscrollcommand = self.UIObject['tree_deck_remote_yscroll'].set
+        )
+        self.UIObject['tree_deck_remote_yscroll'].grid(
+            row = 1,
+            column = 6,
+            sticky = "nsw",
+            rowspan = tmp_tree_rowspan,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+
+    def reloadDeck_local_gen(self):
+        def reloadDeck_local_fun():
+            try:
+                OlivaDiceCore.drawCard.reloadDeck()
+            except:
+                pass
+            self.init_data_deck_local()
+        return reloadDeck_local_fun
+
+    def installDeck_gen(self, flagUnity = False):
+        def installDeck_fun():
+            botHash = 'unity'
+            deckName = self.UIData['deck_remote_now']
+            if flagUnity:
+                botHash = 'unity'
+            else:
+                botHash = self.UIData['hash_now']
+            try:
+                OlivaDiceOdyssey.webTool.downloadExtiverseDeckRemote(
+                    name = deckName,
+                    botHash = botHash
+                )
+                OlivaDiceCore.drawCard.reloadDeck()
+            except:
+                pass
+            self.init_data_deck_local()
+        return installDeck_fun
+
+    def removeDeck_gen(self):
+        def removeDeck_fun():
+            deckName = self.UIData['deck_local_now']
+            botHash = self.UIData['hash_now']
+            try:
+                OlivaDiceCore.drawCard.removeDeck(
+                    botHash = botHash,
+                    deckName = deckName
+                )
+                OlivaDiceCore.drawCard.removeDeck(
+                    botHash = 'unity',
+                    deckName = deckName
+                )
+                OlivaDiceCore.drawCard.reloadDeck()
+            except Exception as e:
+                traceback.print_exc()
+            self.init_data_deck_local()
+        return removeDeck_fun
+
+    def openDeckPath_gen(self, flagUnity = False):
+        def openDeckPath_fun():
+            botHash = 'unity'
+            deckName = self.UIData['deck_remote_now']
+            if flagUnity:
+                botHash = 'unity'
+            else:
+                botHash = self.UIData['hash_now']
+            deck_path = os.path.join('plugin', 'data', 'OlivaDice', botHash, 'extend')
+            try:
+                os.startfile(deck_path)
+            except:
+                pass
+        return openDeckPath_fun
+
+    def uploadDeckUrl_gen(self):
+        def uploadDeckUrl_fun():
+            self.show_project_site('https://github.com/OlivOS-Team/Extiverse')
+        return uploadDeckUrl_fun
+
+    def onNotebookTabChanged(self, event):
+        curTab = self.UIObject['Notebook_root'].tab(self.UIObject['Notebook_root'].select(), "text")
+        if curTab == '牌堆管理':
+            self.init_data_deck_local()
+            try:
+                OlivaDiceOdyssey.webTool.getExtiverseDeckRemote()
+            except:
+                pass
+            # 目前没有高频更新该数据的需求，后期可考虑异步执行
+            if not self.UIData['deck_remote_loaded_flag']:
+                self.UIData['deck_remote_loaded_flag'] = True
+                self.init_data_deck_remote()
+
     def treeSelect(self, name, x):
         if name == 'tree_master':
             force = get_tree_force(self.UIObject['tree_master'])
             self.UIData['entry_master_StringVar'].set(str(force['text']))
+        if name == 'tree_deck_local':
+            force = get_tree_force(self.UIObject['tree_deck_local'])
+            self.UIData['deck_local_now'] = str(force['text'])
+        if name == 'tree_deck_remote':
+            force = get_tree_force(self.UIObject['tree_deck_remote'])
+            self.UIData['deck_remote_now'] = str(force['text'])
 
     def tree_str_rightKey(self, event):
         self.UIObject['tree_rightkey_menu'].delete(0, tkinter.END)
@@ -1226,3 +1679,59 @@ class ConfigUI(object):
                     )
                 except:
                     pass
+        self.init_data_deck_local()
+
+
+    def init_data_deck(self):
+        self.init_data_deck_local()
+
+    def init_data_deck_local(self):
+        tmp_hashSelection = self.UIData['hash_now']
+
+        self.UIData['deck_local_now'] = None
+        tmp_tree_item_children = self.UIObject['tree_deck_local'].get_children()
+        for tmp_tree_item_this in tmp_tree_item_children:
+            self.UIObject['tree_deck_local'].delete(tmp_tree_item_this)
+        tmp_dataList = OlivaDiceCore.drawCardData.dictDeckIndex
+        if tmp_hashSelection in tmp_dataList and type(tmp_dataList[tmp_hashSelection]) is dict:
+            for deckName_this in tmp_dataList[tmp_hashSelection]:
+                try:
+                    self.UIObject['tree_deck_local'].insert(
+                        '',
+                        tkinter.END,
+                        text = deckName_this,
+                        values=(
+                            deckName_this
+                        )
+                    )
+                except:
+                    pass
+
+    def init_data_deck_remote(self):
+        tmp_hashSelection = self.UIData['hash_now']
+
+        self.UIData['deck_remote_now'] = None
+        tmp_tree_item_children = self.UIObject['tree_deck_remote'].get_children()
+        for tmp_tree_item_this in tmp_tree_item_children:
+            self.UIObject['tree_deck_remote'].delete(tmp_tree_item_this)
+        tmp_dataList = OlivaDiceOdyssey.webTool.gExtiverseDeck
+        if type(tmp_dataList) is dict \
+        and 'classic' in tmp_dataList \
+        and type(tmp_dataList['classic']) is list:
+            for deck_this in tmp_dataList['classic']:
+                if 'name' in deck_this \
+                and 'author' in deck_this:
+                    deckName_this = deck_this['name']
+                    deckAuthor_this = deck_this['author']
+                    try:
+                        self.UIObject['tree_deck_remote'].insert(
+                            '',
+                            tkinter.END,
+                            text = deckName_this,
+                            values=(
+                                deckName_this,
+                                deckAuthor_this
+                            )
+                        )
+                    except:
+                        pass
