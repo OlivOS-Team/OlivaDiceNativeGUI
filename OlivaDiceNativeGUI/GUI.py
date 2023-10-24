@@ -841,14 +841,14 @@ class ConfigUI(object):
         self.UIObject['frame_deck_root'].grid_rowconfigure(3, weight = 0)
         self.UIObject['frame_deck_root'].grid_rowconfigure(4, weight = 0)
         self.UIObject['frame_deck_root'].grid_rowconfigure(5, weight = 0)
-        self.UIObject['frame_deck_root'].grid_rowconfigure(6, weight = 1)
+        self.UIObject['frame_deck_root'].grid_rowconfigure(6, weight = 0)
         self.UIObject['frame_deck_root'].grid_rowconfigure(7, weight = 15)
-        self.UIObject['frame_deck_root'].grid_columnconfigure(0, weight = 15)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(0, weight = 30)
         self.UIObject['frame_deck_root'].grid_columnconfigure(1, weight = 0)
-        self.UIObject['frame_deck_root'].grid_columnconfigure(2, weight = 7)
-        self.UIObject['frame_deck_root'].grid_columnconfigure(3, weight = 1)
-        self.UIObject['frame_deck_root'].grid_columnconfigure(4, weight = 7)
-        self.UIObject['frame_deck_root'].grid_columnconfigure(5, weight = 15)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(2, weight = 0)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(3, weight = 0)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(4, weight = 0)
+        self.UIObject['frame_deck_root'].grid_columnconfigure(5, weight = 30)
         self.UIObject['frame_deck_root'].grid_columnconfigure(6, weight = 0)
         tmp_tree_rowspan = 7
         self.UIObject['frame_deck_root'].configure(bg = self.UIConfig['color_001'], borderwidth = 0)
@@ -1180,6 +1180,60 @@ class ConfigUI(object):
             ipady = 0
         )
 
+        self.UIData['label_deck_note_StringVar'] = tkinter.StringVar()
+        self.UIObject['label_deck_note'] = tkinter.Text(
+            self.UIObject['frame_deck_root'],
+            wrap=tkinter.CHAR,
+            width=30
+        )
+        self.UIObject['label_deck_note'].configure(
+            bg = self.UIConfig['color_001'],
+            fg = self.UIConfig['color_004'],
+            bd = 0,
+            font = ('等线', 11),
+            padx = 4,
+            pady = 8,
+            state = tkinter.DISABLED,
+            relief = tkinter.FLAT
+        )
+        self.UIObject['label_deck_note'].grid(
+            row = 7,
+            column = 2,
+            sticky = "nswe",
+            rowspan = 1,
+            columnspan = 3,
+            padx = (15, 15),
+            pady = (20, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+
+    def reload_deck_info(self):
+        self.UIObject['label_deck_note'].configure(state=tkinter.NORMAL)
+        tmp_dataList = OlivaDiceOdyssey.webTool.gExtiverseDeck
+        tmp_deckName = self.UIData['deck_remote_now']
+        self.UIObject['label_deck_note'].delete('1.0', tkinter.END)
+        if type(tmp_dataList) is dict \
+        and 'classic' in tmp_dataList \
+        and type(tmp_dataList['classic']) is list:
+            for deck_this in tmp_dataList['classic']:
+                if 'name' in deck_this \
+                and 'desc' in deck_this \
+                and 'version' in deck_this \
+                and 'version_code' in deck_this \
+                and 'author' in deck_this \
+                and deck_this['name'] == tmp_deckName:
+                    tmp_text = '%s\n\n作者: %s\n版本: %s(%s)\n\n%s' % (
+                        str(deck_this['name']),
+                        str(deck_this['author']),
+                        str(deck_this['version']),
+                        str(deck_this['version_code']),
+                        str(deck_this['desc'])
+                    )
+                    self.UIObject['label_deck_note'].insert('1.0', tmp_text)
+                    break
+        self.UIObject['label_deck_note'].configure(state=tkinter.DISABLED)
+
     def reloadDeck_local_gen(self):
         def reloadDeck_local_fun():
             try:
@@ -1270,6 +1324,7 @@ class ConfigUI(object):
         if name == 'tree_deck_remote':
             force = get_tree_force(self.UIObject['tree_deck_remote'])
             self.UIData['deck_remote_now'] = str(force['text'])
+            self.reload_deck_info()
 
     def tree_str_rightKey(self, event):
         self.UIObject['tree_rightkey_menu'].delete(0, tkinter.END)
