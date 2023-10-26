@@ -1213,25 +1213,36 @@ class ConfigUI(object):
         tmp_dataList = OlivaDiceOdyssey.webTool.gExtiverseDeck
         tmp_deckName = self.UIData['deck_remote_now']
         self.UIObject['label_deck_note'].delete('1.0', tkinter.END)
-        if type(tmp_dataList) is dict \
-        and 'classic' in tmp_dataList \
-        and type(tmp_dataList['classic']) is list:
-            for deck_this in tmp_dataList['classic']:
-                if 'name' in deck_this \
-                and 'desc' in deck_this \
-                and 'version' in deck_this \
-                and 'version_code' in deck_this \
-                and 'author' in deck_this \
-                and deck_this['name'] == tmp_deckName:
-                    tmp_text = '%s\n\n作者: %s\n版本: %s(%s)\n\n%s' % (
-                        str(deck_this['name']),
-                        str(deck_this['author']),
-                        str(deck_this['version']),
-                        str(deck_this['version_code']),
-                        str(deck_this['desc'])
-                    )
-                    self.UIObject['label_deck_note'].insert('1.0', tmp_text)
-                    break
+        for deck_type_this in ['classic', 'yaml', 'excel']:
+            if type(tmp_dataList) is dict \
+            and deck_type_this in tmp_dataList \
+            and type(tmp_dataList[deck_type_this]) is list:
+                for deck_this in tmp_dataList[deck_type_this]:
+                    if 'name' in deck_this \
+                    and 'desc' in deck_this \
+                    and 'version' in deck_this \
+                    and 'version_code' in deck_this \
+                    and 'author' in deck_this \
+                    and 'type' in deck_this \
+                    and 'sub_type' in deck_this \
+                    and deck_this['name'] == tmp_deckName:
+                        tmp_text = '%s\n\n%s\n作者: %s\n版本: %s(%s)\n\n%s' % (
+                            str(deck_this['name']),
+                            str({
+                                'classic': '青果系JSON',
+                                'yaml': '塔系YAML',
+                                'excel': '梨系Excel'
+                            }.get(deck_this['sub_type'], '新型')
+                            ) + str({
+                                'deck': '牌堆',
+                            }.get(deck_this['type'], '未知扩展')),
+                            str(deck_this['author']),
+                            str(deck_this['version']),
+                            str(deck_this['version_code']),
+                            str(deck_this['desc'])
+                        )
+                        self.UIObject['label_deck_note'].insert('1.0', tmp_text)
+                        break
         self.UIObject['label_deck_note'].configure(state=tkinter.DISABLED)
 
     def reloadDeck_local_gen(self):
@@ -1770,23 +1781,24 @@ class ConfigUI(object):
         for tmp_tree_item_this in tmp_tree_item_children:
             self.UIObject['tree_deck_remote'].delete(tmp_tree_item_this)
         tmp_dataList = OlivaDiceOdyssey.webTool.gExtiverseDeck
-        if type(tmp_dataList) is dict \
-        and 'classic' in tmp_dataList \
-        and type(tmp_dataList['classic']) is list:
-            for deck_this in tmp_dataList['classic']:
-                if 'name' in deck_this \
-                and 'author' in deck_this:
-                    deckName_this = deck_this['name']
-                    deckAuthor_this = deck_this['author']
-                    try:
-                        self.UIObject['tree_deck_remote'].insert(
-                            '',
-                            tkinter.END,
-                            text = deckName_this,
-                            values=(
-                                deckName_this,
-                                deckAuthor_this
+        for deck_type_this in ['classic', 'yaml', 'excel']:
+            if type(tmp_dataList) is dict \
+            and deck_type_this in tmp_dataList \
+            and type(tmp_dataList[deck_type_this]) is list:
+                for deck_this in tmp_dataList[deck_type_this]:
+                    if 'name' in deck_this \
+                    and 'author' in deck_this:
+                        deckName_this = deck_this['name']
+                        deckAuthor_this = deck_this['author']
+                        try:
+                            self.UIObject['tree_deck_remote'].insert(
+                                '',
+                                tkinter.END,
+                                text = deckName_this,
+                                values=(
+                                    deckName_this,
+                                    deckAuthor_this
+                                )
                             )
-                        )
-                    except:
-                        pass
+                        except:
+                            pass
