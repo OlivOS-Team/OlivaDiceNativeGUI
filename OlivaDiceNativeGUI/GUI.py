@@ -25,6 +25,7 @@ import tkinter
 from tkinter import ttk
 import webbrowser
 import traceback
+import threading
 
 from PIL import Image
 from PIL import ImageTk
@@ -854,6 +855,10 @@ class ConfigUI(object):
         self.UIObject['frame_deck_root'].configure(bg = self.UIConfig['color_001'], borderwidth = 0)
         self.UIData['deck_local_now'] = None
         self.UIData['deck_remote_now'] = None
+        self.UIData['label_deck_remote_note_StringVar_origin'] = '牌堆市场 ☁'
+        self.UIData['label_deck_remote_note_StringVar_load'] = '正在刷新 ☁'
+        self.UIData['label_deck_remote_note_StringVar_failed'] = '刷新失败 ☁'
+        self.UIData['label_deck_remote_note_StringVar'] = tkinter.StringVar()
 
         self.UIObject['label_deck_local_note'] = tkinter.Label(
             self.UIObject['frame_deck_root'],
@@ -1120,7 +1125,10 @@ class ConfigUI(object):
 
         self.UIObject['label_deck_remote_note'] = tkinter.Label(
             self.UIObject['frame_deck_root'],
-            text = '牌堆市场 ☁'
+            textvariable = self.UIData['label_deck_remote_note_StringVar']
+        )
+        self.UIData['label_deck_remote_note_StringVar'].set(
+            value = self.UIData['label_deck_remote_note_StringVar_origin']
         )
         self.UIObject['label_deck_remote_note'].configure(
             bg = self.UIConfig['color_001'],
@@ -1316,14 +1324,29 @@ class ConfigUI(object):
         curTab = self.UIObject['Notebook_root'].tab(self.UIObject['Notebook_root'].select(), "text")
         if curTab == '牌堆管理':
             self.init_data_deck_local()
+            # 异步执行
+            threading.Thread(target = self.onNotebookTabChanged_init_data_deck_remote).start()
+
+
+    def onNotebookTabChanged_init_data_deck_remote(self):
+        if not self.UIData['deck_remote_loaded_flag']:
+            # 仅在第一次切过来时刷新
+            self.UIData['deck_remote_loaded_flag'] = True
+            self.UIData['label_deck_remote_note_StringVar'].set(
+                value = self.UIData['label_deck_remote_note_StringVar_load']
+            )
+            # 可以考虑在网络操作前就进行一次清空
+            #self.init_data_deck_remote_pre()
             try:
                 OlivaDiceOdyssey.webTool.getExtiverseDeckRemote()
             except:
-                pass
-            # 目前没有高频更新该数据的需求，后期可考虑异步执行
-            if not self.UIData['deck_remote_loaded_flag']:
-                self.UIData['deck_remote_loaded_flag'] = True
-                self.init_data_deck_remote()
+                self.UIData['label_deck_remote_note_StringVar'].set(
+                    value = self.UIData['label_deck_remote_note_StringVar_failed']
+                )
+            self.init_data_deck_remote()
+            self.UIData['label_deck_remote_note_StringVar'].set(
+                value = self.UIData['label_deck_remote_note_StringVar_origin']
+            )
 
     def treeSelect(self, name, x):
         if name == 'tree_master':
@@ -1772,6 +1795,15 @@ class ConfigUI(object):
                     )
                 except:
                     pass
+
+
+    def init_data_deck_remote_pre(self):
+        tmp_hashSelection = self.UIData['hash_now']
+
+        self.UIData['deck_remote_now'] = None
+        tmp_tree_item_children = self.UIObject['tree_deck_remote'].get_children()
+        for tmp_tree_item_this in tmp_tree_item_children:
+            self.UIObject['tree_deck_remote'].delete(tmp_tree_item_this)
 
     def init_data_deck_remote(self):
         tmp_hashSelection = self.UIData['hash_now']
