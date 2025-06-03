@@ -143,6 +143,10 @@ dictStrCustomNote = {
     'strPcUpdateSkillValueAtOther' : '【.st】代他人更新人物卡指令\n人物卡技能快速更新',
     'strPcSetSkillValue' : '【.st】指令\n人物卡保存',
     'strPcGetSingleSkillValue' : '【.st】指令\n查看单个技能',
+    'strPcRecRm' : '【.st rec rm】指令\n删除人物卡映射',
+    'strPcNoteRm' : '【.st rec note】指令\n删除人物卡记录',
+    'strPcRecError' : '【.st rec rm】指令\n删除人物卡映射失败',
+    'strPcNoteError' : '【.st rec note】指令\n删除人物卡映射失败',
     'strPcShow' : '【.st show】指令\n查看人物卡',
     'strPcList' : '【.st list】指令\n查看人物卡列表',
     'strPcLock' : '【.st lock】指令\n锁定人物卡',
@@ -160,7 +164,8 @@ dictStrCustomNote = {
     'strPcDelNone' : '【.st del】指令\n删除人物卡错误\n人物卡列表为空',
     'strPcClear' : '【.st clear】指令\n清空人物卡',
     'strPcClearNone' : '【.st clear】指令\n清空人物卡错误\n当前没有人物卡',
-    'strPcRm' : '【.st rm】指令\n删除人物卡技能',
+    'strPcRm' : '【.st rm】指令\n删除人物卡技能完全成功',
+    'strPcRmPartialSuccess' : '【.st rm】指令\n删除人物卡技能部分成功',
     'strPcRmNone' : '【.st rm】指令\n删除人物卡技能失败\n技能不存在',
     'strPcRmCardNone' : '【.st rm】指令\n删除人物卡技能失败\n人物卡不存在',
     'strPcTemp' : '【.st temp】指令\n设置人物卡模板',
@@ -299,6 +304,13 @@ dictStrCustomNote = {
     'strOdysseyKOOKPlayGameMusicName': 'KOOK在听音乐名称',
     'strOdysseyKOOKPlayGameMusicSinger': 'KOOK在听音乐歌手',
     'strOdysseyKOOKPlayGameID': 'KOOK在玩游戏ID\n需要提前了解对应游戏的ID',
+
+    # OlivaStoryCore
+    'strStoryCoreStoryRecommend': '【.story】指令\n故事模糊匹配',
+    'strStoryCoreStoryTallNone': '【.story】指令\n未找到对应故事',
+    'strStoryCoreStoryTall': '【.story】指令\n故事显示及选项显示',
+    'strStoryCoreStoryTallBreak': '【.story】指令\n故事中断',
+    'strStoryCoreStoryTallEnd': '【.story end】指令\n故事结束',
 }
 
 dictConsoleSwitchNote = {
