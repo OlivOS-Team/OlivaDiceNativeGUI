@@ -261,6 +261,7 @@ dictStrCustomNote = {
     'strLoggerLogFileNotFound': '【.log upload】指令\n未找到对应UUID的日志',
     'strLoggerLogUploadSuccess': '【.log upload】指令\n日志上传成功',
     'strLoggerLogUploadFailed': '【.log upload】指令\n日志上传失败',
+    'strLoggerLogNameNotFound': '【.log temp】指令\n日志名称未找到',
     'strLoggerLogTempSuccess': '【.log temp】指令\n临时日志上传成功',
     'strLoggerLogTempFailed': '【.log temp】指令\n临时日志上传失败',
     'strLoggerLogNotFound': '【.log end/stop】指令\n日志未找到',

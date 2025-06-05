@@ -26,6 +26,8 @@ from tkinter import ttk
 import webbrowser
 import traceback
 import threading
+import json
+import importlib
 
 from PIL import Image
 from PIL import ImageTk
@@ -561,8 +563,88 @@ class ConfigUI(object):
             ipady = 0
         )
 
+        self.UIObject['button_frame_str'] = tkinter.Frame(self.UIObject['frame_str_root'])
+        self.UIObject['button_frame_str'].configure(bg = self.UIConfig['color_001'])
+        self.UIObject['button_frame_str'].grid(
+            row = 2,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 2,
+            padx = (15, 15),
+            pady = (8, 0)
+        )
+
+        self.UIObject['buttom_reset_str'] = tkinter.Button(
+            self.UIObject['button_frame_str'],
+            text = '恢复默认回复',
+            command = lambda : self.reset_str_confirm(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_reset_str'].bind('<Enter>', lambda x : self.buttom_action('buttom_reset_str', '<Enter>'))
+        self.UIObject['buttom_reset_str'].bind('<Leave>', lambda x : self.buttom_action('buttom_reset_str', '<Leave>'))
+        self.UIObject['buttom_reset_str'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_import_str'] = tkinter.Button(
+            self.UIObject['button_frame_str'],
+            text = '导入回复',
+            command = lambda : self.import_str_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_import_str'].bind('<Enter>', lambda x : self.buttom_action('buttom_import_str', '<Enter>'))
+        self.UIObject['buttom_import_str'].bind('<Leave>', lambda x : self.buttom_action('buttom_import_str', '<Leave>'))
+        self.UIObject['buttom_import_str'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_export_str'] = tkinter.Button(
+            self.UIObject['button_frame_str'],
+            text = '导出回复',
+            command = lambda : self.export_str_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_export_str'].bind('<Enter>', lambda x : self.buttom_action('buttom_export_str', '<Enter>'))
+        self.UIObject['buttom_export_str'].bind('<Leave>', lambda x : self.buttom_action('buttom_export_str', '<Leave>'))
+        self.UIObject['buttom_export_str'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_refresh_str'] = tkinter.Button(
+            self.UIObject['button_frame_str'],
+            text = '刷新回复',
+            command = lambda : self.refresh_str_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_refresh_str'].bind('<Enter>', lambda x : self.buttom_action('buttom_refresh_str', '<Enter>'))
+        self.UIObject['buttom_refresh_str'].bind('<Leave>', lambda x : self.buttom_action('buttom_refresh_str', '<Leave>'))
+        self.UIObject['buttom_refresh_str'].pack(side = tkinter.LEFT, padx = (0, 5))
+
         self.UIObject['buttom_edit'] = tkinter.Button(
-            self.UIObject['frame_str_root'],
+            self.UIObject['button_frame_str'],
             text = '编辑',
             command = lambda : self.tree_str_edit(),
             bd = 0,
@@ -576,17 +658,24 @@ class ConfigUI(object):
         )
         self.UIObject['buttom_edit'].bind('<Enter>', lambda x : self.buttom_action('buttom_edit', '<Enter>'))
         self.UIObject['buttom_edit'].bind('<Leave>', lambda x : self.buttom_action('buttom_edit', '<Leave>'))
-        self.UIObject['buttom_edit'].grid(
-            row = 2,
-            column = 0,
-            sticky = "ne",
-            rowspan = 1,
-            columnspan = 2,
-            padx = (15, 0),
-            pady = (8, 0),
-            ipadx = 0,
-            ipady = 0
+        self.UIObject['buttom_edit'].pack(side = tkinter.RIGHT)
+        
+        self.UIObject['buttom_reset_delete_str'] = tkinter.Button(
+            self.UIObject['button_frame_str'],
+            text = '恢复/删除',
+            command = lambda : self.reset_selected_str(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
         )
+        self.UIObject['buttom_reset_delete_str'].bind('<Enter>', lambda x : self.buttom_action('buttom_reset_delete_str', '<Enter>'))
+        self.UIObject['buttom_reset_delete_str'].bind('<Leave>', lambda x : self.buttom_action('buttom_reset_delete_str', '<Leave>'))
+        self.UIObject['buttom_reset_delete_str'].pack(side = tkinter.RIGHT, padx = (0, 5))
 
     def init_frame_console(self):
         self.UIObject['frame_console_root'] = tkinter.Frame(self.UIObject['Notebook_root'])
@@ -650,8 +739,88 @@ class ConfigUI(object):
             ipady = 0
         )
 
+        self.UIObject['button_frame_console'] = tkinter.Frame(self.UIObject['frame_console_root'])
+        self.UIObject['button_frame_console'].configure(bg = self.UIConfig['color_001'])
+        self.UIObject['button_frame_console'].grid(
+            row = 2,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 2,
+            padx = (15, 15),
+            pady = (8, 0)
+        )
+
+        self.UIObject['buttom_reset_console'] = tkinter.Button(
+            self.UIObject['button_frame_console'],
+            text = '恢复默认配置',
+            command = lambda : self.reset_console_confirm(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_reset_console'].bind('<Enter>', lambda x : self.buttom_action('buttom_reset_console', '<Enter>'))
+        self.UIObject['buttom_reset_console'].bind('<Leave>', lambda x : self.buttom_action('buttom_reset_console', '<Leave>'))
+        self.UIObject['buttom_reset_console'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_import_console'] = tkinter.Button(
+            self.UIObject['button_frame_console'],
+            text = '导入配置',
+            command = lambda : self.import_console_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_import_console'].bind('<Enter>', lambda x : self.buttom_action('buttom_import_console', '<Enter>'))
+        self.UIObject['buttom_import_console'].bind('<Leave>', lambda x : self.buttom_action('buttom_import_console', '<Leave>'))
+        self.UIObject['buttom_import_console'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_export_console'] = tkinter.Button(
+            self.UIObject['button_frame_console'],
+            text = '导出配置',
+            command = lambda : self.export_console_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_export_console'].bind('<Enter>', lambda x : self.buttom_action('buttom_export_console', '<Enter>'))
+        self.UIObject['buttom_export_console'].bind('<Leave>', lambda x : self.buttom_action('buttom_export_console', '<Leave>'))
+        self.UIObject['buttom_export_console'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_refresh_console'] = tkinter.Button(
+            self.UIObject['button_frame_console'],
+            text = '刷新配置',
+            command = lambda : self.refresh_console_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_refresh_console'].bind('<Enter>', lambda x : self.buttom_action('buttom_refresh_console', '<Enter>'))
+        self.UIObject['buttom_refresh_console'].bind('<Leave>', lambda x : self.buttom_action('buttom_refresh_console', '<Leave>'))
+        self.UIObject['buttom_refresh_console'].pack(side = tkinter.LEFT, padx = (0, 5))
+
         self.UIObject['buttom_edit'] = tkinter.Button(
-            self.UIObject['frame_console_root'],
+            self.UIObject['button_frame_console'],
             text = '编辑',
             command = lambda : self.tree_console_edit(),
             bd = 0,
@@ -665,17 +834,24 @@ class ConfigUI(object):
         )
         self.UIObject['buttom_edit'].bind('<Enter>', lambda x : self.buttom_action('buttom_edit', '<Enter>'))
         self.UIObject['buttom_edit'].bind('<Leave>', lambda x : self.buttom_action('buttom_edit', '<Leave>'))
-        self.UIObject['buttom_edit'].grid(
-            row = 2,
-            column = 0,
-            sticky = "ne",
-            rowspan = 1,
-            columnspan = 2,
-            padx = (15, 0),
-            pady = (8, 0),
-            ipadx = 0,
-            ipady = 0
+        self.UIObject['buttom_edit'].pack(side = tkinter.RIGHT)
+
+        self.UIObject['buttom_reset_delete_console'] = tkinter.Button(
+            self.UIObject['button_frame_console'],
+            text = '恢复/删除',
+            command = lambda : self.reset_selected_console(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
         )
+        self.UIObject['buttom_reset_delete_console'].bind('<Enter>', lambda x : self.buttom_action('buttom_reset_delete_console', '<Enter>'))
+        self.UIObject['buttom_reset_delete_console'].bind('<Leave>', lambda x : self.buttom_action('buttom_reset_delete_console', '<Leave>'))
+        self.UIObject['buttom_reset_delete_console'].pack(side = tkinter.RIGHT, padx = (0, 5))
 
     def init_frame_master(self):
         self.UIObject['frame_master_root'] = tkinter.Frame(self.UIObject['Notebook_root'])
@@ -1363,11 +1539,13 @@ class ConfigUI(object):
     def tree_str_rightKey(self, event):
         self.UIObject['tree_rightkey_menu'].delete(0, tkinter.END)
         self.UIObject['tree_rightkey_menu'].add_command(label = '编辑', command = lambda : self.tree_str_edit())
+        self.UIObject['tree_rightkey_menu'].add_command(label='恢复/删除', command=lambda: self.reset_selected_str())
         self.UIObject['tree_rightkey_menu'].post(event.x_root, event.y_root)
 
     def tree_console_rightKey(self, event):
         self.UIObject['tree_rightkey_menu'].delete(0, tkinter.END)
         self.UIObject['tree_rightkey_menu'].add_command(label = '编辑', command = lambda : self.tree_console_edit())
+        self.UIObject['tree_rightkey_menu'].add_command(label='恢复/删除', command=lambda: self.reset_selected_console())
         self.UIObject['tree_rightkey_menu'].post(event.x_root, event.y_root)
 
     def tree_str_edit(self):
@@ -1665,6 +1843,18 @@ class ConfigUI(object):
 
     def init_data_total(self):
         tmp_hashSelection = self.UIData['hash_now']
+        # 全局模式禁用回复词里的所有按钮
+        is_global_mode = (tmp_hashSelection == 'unity')
+        if is_global_mode:
+            for button_name in ['buttom_reset_str', 'buttom_import_str', 'buttom_export_str', 
+                               'buttom_refresh_str', 'buttom_reset_delete_str']:
+                if button_name in self.UIObject:
+                    self.UIObject[button_name].config(state=tkinter.DISABLED)
+        else:
+            for button_name in ['buttom_reset_str', 'buttom_import_str', 'buttom_export_str', 
+                               'buttom_refresh_str', 'buttom_reset_delete_str']:
+                if button_name in self.UIObject:
+                    self.UIObject[button_name].config(state=tkinter.NORMAL)
 
         self.UIData['onlineStatus_Label_root_StringVar'].set('当前在线: %s' % OlivaDiceNativeGUI.load.onlineAPICount)
 
@@ -1834,3 +2024,318 @@ class ConfigUI(object):
                             )
                         except:
                             pass
+                        
+    def reset_str_confirm(self):
+        """显示恢复默认回复词的确认对话框"""
+        if tkinter.messagebox.askyesno(
+            "确认恢复",
+            "确定要恢复所有回复词为默认值吗？这将删除所有自定义回复词。",
+            parent=self.UIObject['root']
+        ):
+            self.reset_str_default()
+
+    def reset_str_default(self):
+        """实际执行恢复默认回复词的操作"""
+        tmp_hashSelection = self.UIData['hash_now']
+        if tmp_hashSelection in OlivaDiceCore.msgCustom.dictStrCustomDict:
+            OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = self.default_reply_config().copy()
+            OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = {}
+            OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
+            self.init_data_total()
+            tkinter.messagebox.showinfo("完成", "已恢复所有回复词为默认值", parent=self.UIObject['root'])
+
+    def reset_console_confirm(self):
+        """显示恢复默认配置的确认对话框"""
+        if tkinter.messagebox.askyesno(
+            "确认恢复",
+            "确定要恢复所有配置项为默认值吗？这将重置所有自定义配置。",
+            parent=self.UIObject['root']
+        ):
+            self.reset_console_default()
+
+    def reset_console_default(self):
+        """实际执行恢复默认配置的操作"""
+        tmp_hashSelection = self.UIData['hash_now']
+        if tmp_hashSelection in OlivaDiceCore.console.dictConsoleSwitch:
+            # masterList不换
+            current_master_list = OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection].get('masterList', [])
+            default_config = OlivaDiceCore.console.dictConsoleSwitchTemplate['default'].copy()
+            OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = default_config
+            OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection]['masterList'] = current_master_list
+            OlivaDiceCore.console.saveConsoleSwitch()
+            self.init_data_total()
+            tkinter.messagebox.showinfo("完成", "已恢复所有配置项为默认值", parent=self.UIObject['root'])
+
+    def reset_selected_str(self):
+        """恢复或删除选中的回复词"""
+        tmp_key = get_tree_force(self.UIObject['tree_str'])['text']
+        if not tmp_key:
+            tkinter.messagebox.showwarning("警告", "请先选择要操作的回复词", parent=self.UIObject['root'])
+            return
+
+        tmp_hashSelection = self.UIData['hash_now']
+        current_str_dict = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {})
+        default_str_dict = self.default_reply_config().copy()
+
+        if tmp_key in default_str_dict:
+            if tkinter.messagebox.askyesno(
+                "确认恢复",
+                f"确定要恢复'{tmp_key}'的回复词为默认值吗？",
+                parent=self.UIObject['root']
+            ):
+                default_value = default_str_dict[tmp_key]
+                current_str_dict[tmp_key] = default_value
+                OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = current_str_dict
+                if tmp_hashSelection in OlivaDiceCore.msgCustom.dictStrCustomUpdateDict:
+                    if tmp_key in OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection]:
+                        del OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection][tmp_key]
+                OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
+                self.init_data_total()
+        else:
+            if tkinter.messagebox.askyesno(
+                "确认删除",
+                f"确定要删除'{tmp_key}'的自定义回复词吗？",
+                parent=self.UIObject['root']
+            ):
+                if tmp_key in current_str_dict:
+                    del current_str_dict[tmp_key]
+                    OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = current_str_dict
+                    
+                if tmp_hashSelection in OlivaDiceCore.msgCustom.dictStrCustomUpdateDict:
+                    if tmp_key in OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection]:
+                        del OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection][tmp_key]
+                        
+                OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
+                self.init_data_total()
+
+    def reset_selected_console(self):
+        """恢复选中的配置项为默认值"""
+        tmp_key = get_tree_force(self.UIObject['tree_console'])['text']
+        if not tmp_key:
+            tkinter.messagebox.showwarning("警告", "请先选择要操作的配置项", parent=self.UIObject['root'])
+            return
+
+        tmp_hashSelection = self.UIData['hash_now']
+        default_config = OlivaDiceCore.console.dictConsoleSwitchTemplate['default']
+        current_console_dict = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {})
+
+        if tmp_key in default_config:
+            if tkinter.messagebox.askyesno(
+                "确认恢复",
+                f"确定要恢复'{tmp_key}'的配置为默认值吗？",
+                parent=self.UIObject['root']
+            ):
+                if isinstance(default_config[tmp_key], list):
+                    current_console_dict[tmp_key] = default_config[tmp_key].copy()
+                else:
+                    current_console_dict[tmp_key] = default_config[tmp_key]
+                    
+                OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = current_console_dict
+                OlivaDiceCore.console.saveConsoleSwitch()
+                self.init_data_total()
+        else:
+            if tkinter.messagebox.askyesno(
+                "确认删除",
+                f"确定要删除'{tmp_key}'的自定义配置吗？",
+                parent=self.UIObject['root']
+            ):
+                if tmp_key in current_console_dict:
+                    del current_console_dict[tmp_key]
+                    OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = current_console_dict
+                    OlivaDiceCore.console.saveConsoleSwitch()
+                    self.init_data_total()
+
+    def import_str_config(self):
+        """导入回复词配置"""
+        file_path = tkinter.filedialog.askopenfilename(
+            title="选择回复词配置文件",
+            filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")],
+            parent=self.UIObject['root']
+        )
+        if file_path:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    import_data = json.load(f)
+                if not isinstance(import_data, dict):
+                    raise ValueError("配置文件格式不正确，必须是一个JSON文件")
+                if tkinter.messagebox.askyesno(
+                    "确认导入",
+                    f"确定要导入回复词配置吗？这将覆盖当前配置。",
+                    parent=self.UIObject['root']
+                ):
+                    tmp_hashSelection = self.UIData['hash_now']
+                    backup_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
+                    try:
+                        OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = import_data
+                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = import_data
+                        OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
+                        self.init_data_total()
+                        tkinter.messagebox.showinfo("完成", "回复词配置导入成功", parent=self.UIObject['root'])
+                    except Exception as e:
+                        OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = backup_data
+                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = backup_data
+                        self.init_data_total()
+                        raise
+            except Exception as e:
+                tkinter.messagebox.showerror("错误", f"导入失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+
+    def export_str_config(self):
+        """导出回复词配置"""
+        file_path = tkinter.filedialog.asksaveasfilename(
+            title="保存回复词配置文件",
+            defaultextension=".json",
+            initialfile="customReply.json",
+            filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")],
+            parent=self.UIObject['root']
+        )
+        if file_path:
+            try:
+                tmp_hashSelection = self.UIData['hash_now']
+                export_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {})
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(export_data, f, ensure_ascii=False, indent=4)
+                tkinter.messagebox.showinfo("完成", "回复词配置导出成功", parent=self.UIObject['root'])
+            except Exception as e:
+                tkinter.messagebox.showerror("错误", f"导出失败: {str(e)}", parent=self.UIObject['root'])
+
+    def refresh_str_config(self):
+        """刷新回复词配置"""
+        if tkinter.messagebox.askyesno(
+            "确认刷新",
+            "确定要从文件重新加载回复词配置吗？这将覆盖当前所有修改。",
+            parent=self.UIObject['root']
+        ):
+            tmp_hashSelection = self.UIData['hash_now']
+            default_reply = self.default_reply_config()
+            backup_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
+            backup_update = OlivaDiceCore.msgCustom.dictStrCustomUpdateDict.get(tmp_hashSelection, {}).copy()
+            try:
+                OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = default_reply.copy()
+                customReplyDir = OlivaDiceCore.data.dataDirRoot + '/' + tmp_hashSelection + '/console'
+                customReplyFile = 'customReply.json'
+                customReplyPath = customReplyDir + '/' + customReplyFile
+
+                try:
+                    with open(customReplyPath, 'r', encoding='utf-8') as customReplyPath_f:
+                        update_data = json.load(customReplyPath_f)
+                        if not isinstance(update_data, dict):
+                            raise ValueError("自定义回复文件格式不正确")
+
+                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = update_data
+                        OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection].update(update_data)
+                except FileNotFoundError:
+                    pass
+                except Exception as e:
+                    raise ValueError(f"读取自定义回复文件失败: {str(e)}")
+
+                self.init_data_total()
+                tkinter.messagebox.showinfo("完成", "回复词配置刷新成功", parent=self.UIObject['root'])
+            except Exception as e:
+                OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = backup_data
+                OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = backup_update
+                tkinter.messagebox.showerror("错误", f"刷新失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+
+    def import_console_config(self):
+        """导入控制台配置"""
+        file_path = tkinter.filedialog.askopenfilename(
+            title="选择控制台配置文件",
+            filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")],
+            parent=self.UIObject['root']
+        )
+        if file_path:
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    import_data = json.load(f)
+
+                if not isinstance(import_data, dict):
+                    raise ValueError("配置文件格式不正确，必须是一个JSON文件")
+
+                if tkinter.messagebox.askyesno(
+                    "确认导入",
+                    f"确定要导入控制台配置吗？这将覆盖当前配置。",
+                    parent=self.UIObject['root']
+                ):
+                    tmp_hashSelection = self.UIData['hash_now']
+                    backup_data = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {}).copy()
+                    try:
+                        OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = import_data
+                        OlivaDiceCore.console.saveConsoleSwitch()
+                        self.init_data_total()
+                        tkinter.messagebox.showinfo("完成", "控制台配置导入成功", parent=self.UIObject['root'])
+                    except Exception as e:
+                        OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = backup_data
+                        OlivaDiceCore.console.saveConsoleSwitch()
+                        self.init_data_total()
+                        raise
+            except Exception as e:
+                tkinter.messagebox.showerror("错误", f"导入失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+
+    def export_console_config(self):
+        """导出控制台配置"""
+        file_path = tkinter.filedialog.asksaveasfilename(
+            title="保存控制台配置文件",
+            defaultextension=".json",
+            initialfile="switch.json",
+            filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")],
+            parent=self.UIObject['root']
+        )
+        if file_path:
+            try:
+                tmp_hashSelection = self.UIData['hash_now']
+                export_data = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {})
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(export_data, f, ensure_ascii=False, indent=4)
+                tkinter.messagebox.showinfo("完成", "控制台配置导出成功", parent=self.UIObject['root'])
+            except Exception as e:
+                tkinter.messagebox.showerror("错误", f"导出失败: {str(e)}", parent=self.UIObject['root'])
+
+    def refresh_console_config(self):
+        """刷新控制台配置"""
+        if tkinter.messagebox.askyesno(
+            "确认刷新",
+            "确定要从文件重新加载控制台配置吗？这将覆盖当前所有修改。",
+            parent=self.UIObject['root']
+        ):
+            tmp_hashSelection = self.UIData['hash_now']
+            backup_data = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {}).copy()
+            try:
+                default_config = OlivaDiceCore.console.dictConsoleSwitchTemplate['default'].copy()
+                custom_config = {}
+                config_dir = OlivaDiceCore.data.dataDirRoot + '/' + tmp_hashSelection + '/console'
+                config_file = 'switch.json'
+                config_path = config_dir + '/' + config_file
+                try:
+                    with open(config_path, 'r', encoding='utf-8') as f:
+                        custom_config = json.load(f)
+                        if not isinstance(custom_config, dict):
+                            raise ValueError("配置文件格式不正确")
+                except FileNotFoundError:
+                    pass
+                except Exception as e:
+                    raise ValueError(f"读取配置文件失败: {str(e)}")
+                merged_config = default_config.copy()
+                merged_config.update(custom_config)
+                if 'masterList' in backup_data:
+                    merged_config['masterList'] = backup_data['masterList']
+                OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = merged_config
+                OlivaDiceCore.console.saveConsoleSwitch()
+                self.init_data_total()
+                tkinter.messagebox.showinfo("完成", "控制台配置刷新成功", parent=self.UIObject['root'])
+            except Exception as e:
+                OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = backup_data
+                tkinter.messagebox.showerror("错误", f"刷新失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+    
+    def default_reply_config(self):
+        '''导入所有的dictStrCustom'''
+        default_reply = OlivaDiceCore.msgCustom.dictStrCustom.copy()
+        import_list = ['OlivaDiceJoy', 'OlivaDiceMaster', 'OlivaDiceLogger', 'OlivaDiceOdyssey', 'OlivaStoryCore']
+        for module_name in import_list:
+            try:
+                module = importlib.import_module(module_name)
+                default_reply.update(module.msgCustom.dictStrCustom)
+            except:
+                continue
+            
+        default_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
+        
+        return default_reply
