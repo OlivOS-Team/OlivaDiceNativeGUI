@@ -643,7 +643,7 @@ class ConfigUI(object):
         self.UIObject['buttom_refresh_str'].bind('<Leave>', lambda x : self.buttom_action('buttom_refresh_str', '<Leave>'))
         self.UIObject['buttom_refresh_str'].pack(side = tkinter.LEFT, padx = (0, 5))
 
-        self.UIObject['buttom_edit'] = tkinter.Button(
+        self.UIObject['buttom_edit_str'] = tkinter.Button(
             self.UIObject['button_frame_str'],
             text = '编辑',
             command = lambda : self.tree_str_edit(),
@@ -656,9 +656,9 @@ class ConfigUI(object):
             height = 2,
             width = 12
         )
-        self.UIObject['buttom_edit'].bind('<Enter>', lambda x : self.buttom_action('buttom_edit', '<Enter>'))
-        self.UIObject['buttom_edit'].bind('<Leave>', lambda x : self.buttom_action('buttom_edit', '<Leave>'))
-        self.UIObject['buttom_edit'].pack(side = tkinter.RIGHT)
+        self.UIObject['buttom_edit_str'].bind('<Enter>', lambda x : self.buttom_action('buttom_edit_str', '<Enter>'))
+        self.UIObject['buttom_edit_str'].bind('<Leave>', lambda x : self.buttom_action('buttom_edit_str', '<Leave>'))
+        self.UIObject['buttom_edit_str'].pack(side = tkinter.RIGHT)
         
         self.UIObject['buttom_reset_delete_str'] = tkinter.Button(
             self.UIObject['button_frame_str'],
@@ -819,7 +819,7 @@ class ConfigUI(object):
         self.UIObject['buttom_refresh_console'].bind('<Leave>', lambda x : self.buttom_action('buttom_refresh_console', '<Leave>'))
         self.UIObject['buttom_refresh_console'].pack(side = tkinter.LEFT, padx = (0, 5))
 
-        self.UIObject['buttom_edit'] = tkinter.Button(
+        self.UIObject['buttom_edit_console'] = tkinter.Button(
             self.UIObject['button_frame_console'],
             text = '编辑',
             command = lambda : self.tree_console_edit(),
@@ -832,9 +832,9 @@ class ConfigUI(object):
             height = 2,
             width = 12
         )
-        self.UIObject['buttom_edit'].bind('<Enter>', lambda x : self.buttom_action('buttom_edit', '<Enter>'))
-        self.UIObject['buttom_edit'].bind('<Leave>', lambda x : self.buttom_action('buttom_edit', '<Leave>'))
-        self.UIObject['buttom_edit'].pack(side = tkinter.RIGHT)
+        self.UIObject['buttom_edit_console'].bind('<Enter>', lambda x : self.buttom_action('buttom_edit_console', '<Enter>'))
+        self.UIObject['buttom_edit_console'].bind('<Leave>', lambda x : self.buttom_action('buttom_edit_console', '<Leave>'))
+        self.UIObject['buttom_edit_console'].pack(side = tkinter.RIGHT)
 
         self.UIObject['buttom_reset_delete_console'] = tkinter.Button(
             self.UIObject['button_frame_console'],
