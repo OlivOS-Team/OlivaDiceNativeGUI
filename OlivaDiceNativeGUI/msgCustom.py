@@ -271,7 +271,6 @@ dictStrCustomNote = {
     'strLoggerLogRenameActiveSuccess': '【.log rename】指令\n活跃日志重命名成功',
     'strLoggerLogRenameSameName': '【.log rename】指令\n日志重命名重复',
     'strLoggerLogRenameNameExists': '【.log rename】指令\n日志重命名的名字已存在',
-    'strLoggerLogSwitch': '已废弃',
 
     # OlivaDiceMaster
     'strMasterReply': '',
