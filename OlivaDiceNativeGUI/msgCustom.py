@@ -141,6 +141,7 @@ dictStrCustomNote = {
     'strPcInitShowNode' : '【.init】指令\n列表每行展示格式',
     'strPcInitDel' : '【.init del】指令\n从先攻列表中删除',
     'strPcInit' : '【.coc/.dnd】指令\n人物卡作成',
+    'strPcInitErrorRange' : '【.coc/.dnd】指令\n人物卡作成超出范围',
     'strPcUpdateSkillValue' : '【.st】指令\n人物卡技能快速更新',
     'strPcUpdateSkillValueAtOther' : '【.st】代他人更新人物卡指令\n人物卡技能快速更新',
     'strPcSetSkillValue' : '【.st】指令\n人物卡保存',
