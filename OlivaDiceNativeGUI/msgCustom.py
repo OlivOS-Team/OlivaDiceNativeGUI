@@ -146,6 +146,7 @@ dictStrCustomNote = {
     'strPcUpdateSkillValueAtOther' : '【.st】代骰指令\n代他人进行人物卡技能快速更新',
     'strPcSetSkillValue' : '【.st】指令\n人物卡保存',
     'strPcSetSkillValueAtOther' : '【.st】代骰指令\n代他人进行人物卡保存',
+    'strPcSetSpecialSkills' : '人物卡特殊属性录入警告',
     'strPcGetSingleSkillValue' : '【.st】指令\n查看单个技能',
     'strPcGetSingleSkillValueAtOther' : '【.st】代骰指令\n查看他人单个技能',
     'strPcShow' : '【.st show】指令\n查看人物卡',
