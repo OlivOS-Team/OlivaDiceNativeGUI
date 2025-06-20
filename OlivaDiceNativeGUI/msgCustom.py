@@ -161,6 +161,7 @@ dictStrCustomNote = {
     'strPcSet' : '【.st set】指令\n切换人物卡',
     'strPcSetError' : '【.st set】指令\n切换人物卡错误\n人物卡不存在',
     'strPcNew' : '【.st new】指令\n新建人物卡',
+    'strPcNewAtOther' : '【.st new】代骰指令\n帮他人新建人物卡',
     'strPcNewError' : '【.st new】指令\n新建人物卡发生错误',
     'strPcDel' : '【.st del】指令\n删除人物卡',
     'strPcDelError' : '【.st del】指令\n删除人物卡错误',
