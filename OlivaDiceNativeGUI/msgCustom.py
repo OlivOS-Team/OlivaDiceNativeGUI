@@ -265,6 +265,7 @@ dictStrCustomNote = {
     'strLoggerLogListEmpty': '【.log list】指令\n本群日志为空',
     'strLoggerLogStop': '【.log stop】指令\n强制停止日志',
     'strLoggerLogStopError': '【.log stop】指令\n强制停止日志（日志已损坏）',
+    'strLoggerLogActiveSwitch': '【.log active】指令\n切换活跃日志',
     'strLoggerLogUploadNoName': '【.log upload】指令\n未指定UUID',
     'strLoggerLogFileNotFound': '【.log upload】指令\n未找到对应UUID的日志',
     'strLoggerLogUploadSuccess': '【.log upload】指令\n日志上传成功',
