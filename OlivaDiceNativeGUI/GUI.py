@@ -321,7 +321,10 @@ class ConfigUI(object):
 
         releaseBase64Data('./resource', 'tmp_icon.png', OlivaDiceNativeGUI.imageData.icon)
         self.UIObject['icon_img_data'] = Image.open('./resource/tmp_icon.png')
-        self.UIObject['icon_img_data'] = self.UIObject['icon_img_data'].resize((192 * 2, 108 * 2), Image.ANTIALIAS)
+        try:
+            self.UIObject['icon_img_data'] = self.UIObject['icon_img_data'].resize((192 * 2, 108 * 2), Image.Resampling.LANCZOS if hasattr(Image, 'Resampling') else Image.LANCZOS)
+        except AttributeError:
+            self.UIObject['icon_img_data'] = self.UIObject['icon_img_data'].resize((192 * 2, 108 * 2), Image.ANTIALIAS)
         self.UIObject['icon_img'] = ImageTk.PhotoImage(self.UIObject['icon_img_data'])
         self.UIObject['icon_label'] = tkinter.Label(self.UIObject['frame_main_root'])
         self.UIObject['icon_label'].config(image = self.UIObject['icon_img'])
