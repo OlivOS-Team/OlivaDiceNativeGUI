@@ -183,6 +183,7 @@ dictStrCustomNote = {
     'strPcNoteRm' : '【.st note rm】指令\n删除人物卡记录',
     'strPcRecError' : '【.st rec rm】指令\n删除人物卡映射失败',
     'strPcNoteError' : '【.st note rm】指令\n删除人物卡映射失败',
+    'strPcExportCardNone' : '【.st export】指令\n当前没有人物卡',
     'strNoPcInputCard' : '【.st export】指令\n未找到指定人物卡或人物卡无技能数据',
     'strPcCardNoSkill' : '【.st export】指令\n人物卡无技能数据',
     'strPcCardExport' : '【.st export】指令\n导出人物卡技能数据',
