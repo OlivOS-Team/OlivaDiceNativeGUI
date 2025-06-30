@@ -2259,9 +2259,12 @@ class ConfigUI(object):
                     parent=self.UIObject['root']
                 ):
                     tmp_hashSelection = self.UIData['hash_now']
-                    backup_data = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {}).copy()
+                    current_config = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {})
+                    backup_data = current_config.copy()
                     try:
-                        OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = import_data
+                        for key in import_data:
+                            current_config[key] = import_data[key]
+                        OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = current_config
                         OlivaDiceCore.console.saveConsoleSwitch()
                         self.init_data_total()
                         tkinter.messagebox.showinfo("完成", "控制台配置导入成功", parent=self.UIObject['root'])
