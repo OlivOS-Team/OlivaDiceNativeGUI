@@ -270,7 +270,6 @@ dictStrCustomNote = {
     'strNoTeams': '【.team】指令相关\n当前群组没有小队',
     'strNoMembersRemoved': '【.team rm】指令相关\n没有移除小队成员',
     'strTeamEmpty': '【.team】指令相关\n小队中没有成员',
-    'strForGroupOnly': '【.team】指令相关\n此功能只对群聊开放',
 
     # OlivaDiceJoy
     'strJoyJrrp': '【.jrrp】指令\n今日人品',
