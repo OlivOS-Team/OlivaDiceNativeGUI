@@ -264,6 +264,7 @@ dictStrCustomNote = {
     'strTeamRenamed': '【.team rename】指令\n小队重命名成功',
     'strTeamRenameNeedNewName': '【.team rename】指令\n无新小队名称',
     'strTeamNameExists': '【.team rename】指令\n小队名称已存在',
+    'strTeamSkillUpdate': '【.team st】指令\n小队技能值更改',
     'strNoActiveTeam': '【.team】指令相关\n无活跃小队',
     'strTeamNotFound': '【.team】指令相关\n未找到小队',
     'strNoTeams': '【.team】指令相关\n当前群组没有小队',
