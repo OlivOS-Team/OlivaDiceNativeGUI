@@ -2168,15 +2168,23 @@ class ConfigUI(object):
                 ):
                     tmp_hashSelection = self.UIData['hash_now']
                     backup_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
+                    backup_update = OlivaDiceCore.msgCustom.dictStrCustomUpdateDict.get(tmp_hashSelection, {}).copy()
                     try:
-                        OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = import_data
-                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = import_data
+                        # 覆盖导入
+                        current_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {})
+                        current_update = OlivaDiceCore.msgCustom.dictStrCustomUpdateDict.get(tmp_hashSelection, {})
+                        updated_data = current_data.copy()
+                        updated_data.update(import_data)
+                        updated_update = current_update.copy()
+                        updated_update.update(import_data)
+                        OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = updated_data
+                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = updated_update
                         OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
                         self.init_data_total()
                         tkinter.messagebox.showinfo("完成", "回复词配置导入成功", parent=self.UIObject['root'])
                     except Exception as e:
                         OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = backup_data
-                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = backup_data
+                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = backup_update
                         self.init_data_total()
                         raise
             except Exception as e:
