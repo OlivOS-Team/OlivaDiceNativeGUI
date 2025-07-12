@@ -151,6 +151,8 @@ dictStrCustomNote = {
     'strPcSetSpecialSkills' : '人物卡特殊属性录入警告',
     'strPcGetSingleSkillValue' : '【.st】指令\n查看单个技能',
     'strPcGetSingleSkillValueAtOther' : '【.st】代骰指令\n查看他人单个技能',
+    'strPcGetMultiSkillValue': '【.st】指令\n查看多个技能',
+    'strPcGetMultiSkillValueAtOther': '【.st】代骰指令\n查看他人多个技能',
     'strPcShow' : '【.st show】指令\n查看人物卡',
     'strPcShowAtOther' : '【.st show】代骰指令\n代他人查看人物卡',
     'strPcList' : '【.st list】指令\n查看人物卡列表',
