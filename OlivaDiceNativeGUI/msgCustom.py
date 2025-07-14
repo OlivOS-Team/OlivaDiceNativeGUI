@@ -211,7 +211,7 @@ dictStrCustomNote = {
     'strPcSkillEnhanceContent' : '【.en】指令\n指定技能成长片段',
     'strPcSkillEnhanceAll' : '【.en】指令\n多项/自动技能成长',
     'strPcSkillEnhanceSkipped': '【.en】指令\n跳过成长',
-    'strPcSkillEnhanceNotFound': '【.en】指令\n 未找到技能',
+    'strPcSkillEnhanceNotFound': '【.en】指令\n未找到技能',
     'strPcSkillEnhanceOnlySpecial': '【.en】指令\n0值或特殊技能',
     'strPcSkillEnhanceError' : '【.en】指令\n技能成长错误',
     'strSanCheck' : '【.sc】指令\n理智检定',
