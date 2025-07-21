@@ -2341,6 +2341,9 @@ class ConfigUI(object):
     
     def default_reply_config(self):
         '''导入所有的dictStrCustom'''
+        # 获取当前内存中的回复词配置
+        tmp_hashSelection = self.UIData['hash_now']
+        current_config = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
         default_reply = OlivaDiceCore.msgCustom.dictStrCustom.copy()
         import_list = ['OlivaDiceJoy', 'OlivaDiceMaster', 'OlivaDiceLogger', 'OlivaDiceOdyssey', 'OlivaStoryCore']
         for module_name in import_list:
@@ -2349,7 +2352,9 @@ class ConfigUI(object):
                 default_reply.update(module.msgCustom.dictStrCustom)
             except:
                 continue
-            
         default_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
-        
-        return default_reply
+        merged_config = current_config.copy()
+        for key in default_reply:
+            merged_config[key] = default_reply[key]
+
+        return merged_config
