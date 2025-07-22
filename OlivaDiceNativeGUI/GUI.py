@@ -2078,7 +2078,7 @@ class ConfigUI(object):
 
         tmp_hashSelection = self.UIData['hash_now']
         current_str_dict = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {})
-        default_str_dict = self.default_reply_config().copy()
+        default_str_dict = self.default_reply_config_for_delete().copy()
 
         if tmp_key in default_str_dict:
             if tkinter.messagebox.askyesno(
@@ -2341,6 +2341,9 @@ class ConfigUI(object):
     
     def default_reply_config(self):
         '''导入所有的dictStrCustom'''
+        # 获取当前内存中的回复词配置
+        tmp_hashSelection = self.UIData['hash_now']
+        current_config = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
         default_reply = OlivaDiceCore.msgCustom.dictStrCustom.copy()
         import_list = ['OlivaDiceJoy', 'OlivaDiceMaster', 'OlivaDiceLogger', 'OlivaDiceOdyssey', 'OlivaStoryCore']
         for module_name in import_list:
@@ -2349,7 +2352,22 @@ class ConfigUI(object):
                 default_reply.update(module.msgCustom.dictStrCustom)
             except:
                 continue
-            
         default_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
-        
+        merged_config = current_config.copy()
+        for key in default_reply:
+            merged_config[key] = default_reply[key]
+
+        return merged_config
+
+    def default_reply_config_for_delete(self):
+        '''导入所有的dictStrCustom-删除用'''
+        default_reply = OlivaDiceCore.msgCustom.dictStrCustom.copy()
+        import_list = ['OlivaDiceJoy', 'OlivaDiceMaster', 'OlivaDiceLogger', 'OlivaDiceOdyssey', 'OlivaStoryCore']
+        for module_name in import_list:
+            try:
+                module = importlib.import_module(module_name)
+                default_reply.update(module.msgCustom.dictStrCustom)
+            except:
+                continue
+        default_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
         return default_reply
