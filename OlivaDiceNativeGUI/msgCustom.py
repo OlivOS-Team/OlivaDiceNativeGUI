@@ -274,6 +274,8 @@ dictStrCustomNote = {
     'strTeamSkillUpdate': '【.team st】指令\n小队技能值更改',
     'strTeamCheckResult': '【.team ra】指令\n小队技能检定',
     'strTeamSCResult': '【.team sc】指令\n小队理智检定',
+    'strTeamRoll': '【.team r】指令\n小队掷骰',
+    'strTeamRollWithReason': '【.team r】指令\n小队带原因掷骰',
     'strNoActiveTeam': '【.team】指令相关\n无活跃小队',
     'strTeamNotFound': '【.team】指令相关\n未找到小队',
     'strNoTeams': '【.team】指令相关\n当前群组没有小队',
