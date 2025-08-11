@@ -1832,7 +1832,7 @@ class ConfigUI(object):
             # 说明标签
             label_info = tkinter.Label(
                 self.UIObject['root'],
-                text="在此处编辑恢复时使用的模块列表，每行一个模块名。\n恢复操作将从这些模块加载默认回复词。\n注意：\n1. 模块名必须与实际模块名一致。\n2. 若选择的模块不存在\n或没有在该模块的msgCustom.py里定义默认回复词，\n则会跳过该模块。\n3. 模块名区分大小写。\n4. 清空文本框将加载默认模块。\n5. 不同 Bot 的恢复模块配置是独立的。\n6. 设置完毕后实时更新，无需重载插件。",
+                text="在此处编辑恢复模块列表，每行一个模块名。\n恢复操作将从这些模块加载默认回复词。\n注意：\n1. 模块名必须与实际模块名一致。\n2. 若选择的模块不存在\n或没有在该模块的msgCustom.py里定义默认回复词，\n则会跳过该模块。\n3. 模块名区分大小写。\n4. 清空文本框将加载默认模块。\n5. 不同 Bot 的恢复模块配置是独立的。\n6. 设置完毕后实时更新，无需重载插件。",
                 font=('等线', 11),
                 bg=self.UIConfig['color_001'],
                 fg=self.UIConfig['color_004'],
@@ -2164,7 +2164,7 @@ class ConfigUI(object):
         """显示恢复默认回复词的确认对话框"""
         if messagebox.askyesno(
             "确认恢复",
-            "确定要恢复配置恢复模块中的回复词为默认值吗？这将删除这些模块中自定义的回复词。",
+            "确定要将配置恢复模块中模块的回复词重置为默认值吗？\n此操作将删除配置恢复模块中所有自定义回复词。",
             parent=self.UIObject['root']
         ):
             self.reset_str_default()
@@ -2177,7 +2177,7 @@ class ConfigUI(object):
             OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = {}
             OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
             self.init_data_total()
-            messagebox.showinfo("完成", "已恢复配置恢复模块为默认值", parent=self.UIObject['root'])
+            messagebox.showinfo("完成", "已恢复配置恢复模块中的包含的回复词为默认值", parent=self.UIObject['root'])
 
     def reset_console_confirm(self):
         """显示恢复默认配置的确认对话框"""
