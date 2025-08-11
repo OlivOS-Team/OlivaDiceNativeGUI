@@ -2302,15 +2302,25 @@ class ConfigUI(object):
                     backup_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
                     backup_update = OlivaDiceCore.msgCustom.dictStrCustomUpdateDict.get(tmp_hashSelection, {}).copy()
                     try:
-                        # 覆盖导入
-                        current_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {})
-                        current_update = OlivaDiceCore.msgCustom.dictStrCustomUpdateDict.get(tmp_hashSelection, {})
-                        updated_data = current_data.copy()
-                        updated_data.update(import_data)
-                        updated_update = current_update.copy()
-                        updated_update.update(import_data)
-                        OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = updated_data
-                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = updated_update
+                        default_reply = self.default_reply_config()
+                        final_reply = default_reply.copy()
+                        custom_items = {}
+                        for key in import_data:
+                            if key not in final_reply:
+                                custom_items[key] = import_data[key]
+                        final_reply.update(import_data)
+                        sorted_custom_reply = {}
+                        for key in default_reply:
+                            if key in import_data:
+                                sorted_custom_reply[key] = import_data[key]
+                        sorted_custom_reply.update(custom_items)
+                        OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = final_reply
+                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = sorted_custom_reply
+                        customReplyDir = os.path.join(OlivaDiceCore.data.dataDirRoot, tmp_hashSelection, 'console')
+                        os.makedirs(customReplyDir, exist_ok=True)
+                        customReplyPath = os.path.join(customReplyDir, 'customReply.json')
+                        with open(customReplyPath, 'w', encoding='utf-8') as f:
+                            json.dump(sorted_custom_reply, f, ensure_ascii=False, indent=4)
                         OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
                         self.init_data_total()
                         messagebox.showinfo("完成", "回复词配置导入成功", parent=self.UIObject['root'])
@@ -2349,28 +2359,40 @@ class ConfigUI(object):
             parent=self.UIObject['root']
         ):
             tmp_hashSelection = self.UIData['hash_now']
-            default_reply = self.default_reply_config()
             backup_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
             backup_update = OlivaDiceCore.msgCustom.dictStrCustomUpdateDict.get(tmp_hashSelection, {}).copy()
             try:
-                OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = default_reply.copy()
-                customReplyDir = OlivaDiceCore.data.dataDirRoot + '/' + tmp_hashSelection + '/console'
+                default_reply = self.default_reply_config()
+                customReplyDir = os.path.join(OlivaDiceCore.data.dataDirRoot, tmp_hashSelection, 'console')
                 customReplyFile = 'customReply.json'
-                customReplyPath = customReplyDir + '/' + customReplyFile
-
+                customReplyPath = os.path.join(customReplyDir, customReplyFile)
+                update_data = {}
                 try:
                     with open(customReplyPath, 'r', encoding='utf-8') as customReplyPath_f:
                         update_data = json.load(customReplyPath_f)
                         if not isinstance(update_data, dict):
                             raise ValueError("自定义回复文件格式不正确")
-
-                        OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = update_data
-                        OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection].update(update_data)
                 except FileNotFoundError:
                     pass
                 except Exception as e:
                     raise ValueError(f"读取自定义回复文件失败: {str(e)}")
-
+                final_reply = default_reply.copy()
+                custom_items = {}
+                for key in update_data:
+                    if key not in final_reply:
+                        custom_items[key] = update_data[key]
+                final_reply.update(update_data)
+                sorted_custom_reply = {}
+                for key in default_reply:
+                    if key in update_data:
+                        sorted_custom_reply[key] = update_data[key]
+                sorted_custom_reply.update(custom_items)
+                OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = final_reply
+                OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = sorted_custom_reply
+                os.makedirs(customReplyDir, exist_ok=True)
+                with open(customReplyPath, 'w', encoding='utf-8') as f:
+                    json.dump(sorted_custom_reply, f, ensure_ascii=False, indent=4)
+                OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
                 self.init_data_total()
                 messagebox.showinfo("完成", "回复词配置刷新成功", parent=self.UIObject['root'])
             except Exception as e:
@@ -2476,21 +2498,28 @@ class ConfigUI(object):
         # 获取当前内存中的回复词配置
         tmp_hashSelection = self.UIData['hash_now']
         current_config = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
-        default_reply = {}
-        # 从配置文件加载模块列表
         import_list = self.load_recover_modules(tmp_hashSelection)
+        ordered_reply = {}
+        module_replies = {}
         for module_name in import_list:
             try:
                 module = importlib.import_module(module_name)
                 if hasattr(module, 'msgCustom') and hasattr(module.msgCustom, 'dictStrCustom'):
-                    default_reply.update(module.msgCustom.dictStrCustom)
+                    module_replies[module_name] = module.msgCustom.dictStrCustom.copy()
+                    ordered_reply.update(module.msgCustom.dictStrCustom)
             except (ImportError, AttributeError):
                 continue
-        default_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
-        merged_config = current_config.copy()
-        for key in default_reply:
-            merged_config[key] = default_reply[key]
-        return merged_config
+        ordered_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
+        # 排序回复词
+        sorted_reply = {}
+        for module_name in import_list:
+            if module_name in module_replies:
+                sorted_reply.update(module_replies[module_name])
+        sorted_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
+        for key in current_config:
+            if key not in sorted_reply:
+                sorted_reply[key] = current_config[key]
+        return sorted_reply
     
     def default_reply_config_for_delete(self):
         '''导入所有的dictStrCustom-删除用'''
