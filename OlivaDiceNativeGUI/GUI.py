@@ -1633,9 +1633,6 @@ class ConfigUI(object):
                 hash = self.UIData['hash_now']
             ).start()
 
-    # =================================================================================
-    # 新增：用于打开模块编辑窗口的函数
-    # =================================================================================
     def edit_restore_modules(self):
         """打开恢复模块配置的UI"""
         self.edit_modules_UI(
@@ -1821,8 +1818,8 @@ class ConfigUI(object):
         def start(self):
             self.UIObject['root'] = tkinter.Toplevel(self.root)
             self.UIObject['root'].title('配置恢复模块')
-            self.UIObject['root'].geometry('400x350')
-            self.UIObject['root'].minsize(400, 350)
+            self.UIObject['root'].geometry('400x450')
+            self.UIObject['root'].minsize(400, 450)
             self.UIObject['root'].resizable(True, True)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=1)
@@ -1832,7 +1829,18 @@ class ConfigUI(object):
             # 说明标签
             label_info = tkinter.Label(
                 self.UIObject['root'],
-                text="在此处编辑恢复模块列表，每行一个模块名。\n恢复操作将从这些模块加载默认回复词。\n注意：\n1. 模块名必须与实际模块名一致。\n2. 若选择的模块不存在\n或没有在该模块的msgCustom.py里定义默认回复词，\n则会跳过该模块。\n3. 模块名区分大小写。\n4. 清空文本框将加载默认模块。\n5. 不同 Bot 的恢复模块配置是独立的。\n6. 设置完毕后实时更新，无需重载插件。",
+                text='''在此处编辑恢复模块列表，每行一个模块名。
+恢复操作将从这些模块加载默认回复词。
+注意：
+1. 模块名必须与实际模块名一致。
+2. 若选择的模块不存在
+或没有在该模块的msgCustom.py里定义默认回复词，
+则会跳过该模块。
+3. 模块名区分大小写。
+4. 若需要恢复默认模块，请清空文本框并保存。
+5. 不同 Bot 的恢复模块配置是独立的。
+6. 设置完毕后实时更新，无需重载插件。
+7. 若不知道这里是做什么的，请不要随意修改。''',
                 font=('等线', 11),
                 bg=self.UIConfig['color_001'],
                 fg=self.UIConfig['color_004'],
