@@ -22,7 +22,7 @@ import OlivaDiceOdyssey
 import base64
 import os
 import tkinter
-from tkinter import ttk
+from tkinter import ttk, filedialog, messagebox
 import webbrowser
 import traceback
 import threading
@@ -60,6 +60,51 @@ class ConfigUI(object):
         self.UIData['flag_open'] = False
         self.UIData['click_record'] = {}
         self.UIConfig.update(dictColorContext)
+
+    def get_recover_modules_path(self, hash_selection):
+        return os.path.join(OlivaDiceCore.data.dataDirRoot, hash_selection, 'console', 'recover_model.json')
+
+    def get_default_modules(self):
+        return ['OlivaDiceCore', 'OlivaDiceJoy', 'OlivaDiceMaster', 'OlivaDiceLogger', 'OlivaDiceOdyssey', 'OlivaStoryCore']
+
+    def load_recover_modules(self, hash_selection):
+        path = self.get_recover_modules_path(hash_selection)
+        if not os.path.exists(path):
+            default_modules = self.get_default_modules()
+            dir_path = os.path.dirname(path)
+            if not os.path.exists(dir_path):
+                os.makedirs(dir_path, exist_ok=True)
+            with open(path, 'w', encoding='utf-8') as f:
+                json.dump({"modules": default_modules}, f, ensure_ascii=False, indent=4)
+            return default_modules
+        else:
+            try:
+                with open(path, 'r', encoding='utf-8') as f:
+                    content = f.read()
+                    if not content.strip():
+                        default_modules = self.get_default_modules()
+                        self.save_recover_modules(hash_selection, default_modules)
+                        return default_modules
+                    f.seek(0)
+                    data = json.load(f)
+                    modules_list = data.get("modules")
+                    if not isinstance(modules_list, list) or not modules_list:
+                        default_modules = self.get_default_modules()
+                        self.save_recover_modules(hash_selection, default_modules)
+                        return default_modules
+                    return modules_list
+            except (json.JSONDecodeError, IOError):
+                default_modules = self.get_default_modules()
+                self.save_recover_modules(hash_selection, default_modules)
+                return default_modules
+
+    def save_recover_modules(self, hash_selection, modules_list):
+        path = self.get_recover_modules_path(hash_selection)
+        dir_path = os.path.dirname(path)
+        if not os.path.exists(dir_path):
+            os.makedirs(dir_path, exist_ok=True)
+        with open(path, 'w', encoding='utf-8') as f:
+            json.dump({"modules": modules_list}, f, ensure_ascii=False, indent=4)
 
     def start(self):
         self.UIObject['root'] = tkinter.Toplevel()
@@ -484,18 +529,18 @@ class ConfigUI(object):
         self.UIObject['root'].clipboard_clear()
         self.UIObject['root'].clipboard_append(self.UIData['buttom_master_token_copy_StringVar'].get())
         self.UIObject['root'].update()
-        tkinter.messagebox.showinfo('已完成复制', '在聊天窗口中发送给骰子，即可成为骰主！')
+        messagebox.showinfo('已完成复制', '在聊天窗口中发送给骰子，即可成为骰主！')
 
     def process_msg(self):
         self.UIObject['root'].after(1000,self.process_msg)
         self.UIData['buttom_master_token_copy_StringVar'].set('.master %s' % OlivaDiceCore.data.bot_content['masterKey'])
 
     def show_project_site(self, url):
-        tkinter.messagebox.showinfo("提示", "将通过浏览器访问 " + url)
+        messagebox.showinfo("提示", "将通过浏览器访问 " + url)
         try:
             webbrowser.open(url)
         except webbrowser.Error as error_info:
-            tkinter.messagebox.showerror("webbrowser.Error", error_info)
+            messagebox.showerror("webbrowser.Error", error_info)
 
     def buttom_action(self, name, action):
         if name in self.UIObject:
@@ -577,7 +622,24 @@ class ConfigUI(object):
             padx = (15, 15),
             pady = (8, 0)
         )
-
+        
+        self.UIObject['buttom_config_restore'] = tkinter.Button(
+            self.UIObject['button_frame_str'],
+            text='配置恢复模块',
+            command=self.edit_restore_modules,
+            bd=0,
+            activebackground=self.UIConfig['color_002'],
+            activeforeground=self.UIConfig['color_001'],
+            bg=self.UIConfig['color_003'],
+            fg=self.UIConfig['color_004'],
+            relief='groove',
+            height=2,
+            width=12
+        )
+        self.UIObject['buttom_config_restore'].bind('<Enter>', lambda x: self.buttom_action('buttom_config_restore', '<Enter>'))
+        self.UIObject['buttom_config_restore'].bind('<Leave>', lambda x: self.buttom_action('buttom_config_restore', '<Leave>'))
+        self.UIObject['buttom_config_restore'].pack(side=tkinter.LEFT, padx=(0, 5))
+    
         self.UIObject['buttom_reset_str'] = tkinter.Button(
             self.UIObject['button_frame_str'],
             text = '恢复默认回复',
@@ -1571,6 +1633,17 @@ class ConfigUI(object):
                 hash = self.UIData['hash_now']
             ).start()
 
+    # =================================================================================
+    # 新增：用于打开模块编辑窗口的函数
+    # =================================================================================
+    def edit_restore_modules(self):
+        """打开恢复模块配置的UI"""
+        self.edit_modules_UI(
+            root_obj=self.UIObject['root'],
+            root_class=self,
+            hash_selection=self.UIData['hash_now']
+        ).start()
+
     def tree_master_config(self, action:str):
         tmp_hashSelection = self.UIData['hash_now']
         tmp_platform = None
@@ -1736,6 +1809,69 @@ class ConfigUI(object):
                 OlivaDiceCore.msgCustom.dictStrCustomDict[self.hash][self.key] = tmp_new_str
                 OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(self.hash)
 
+    class edit_modules_UI(object):
+        def __init__(self, root_obj, root_class, hash_selection):
+            self.root = root_obj
+            self.root_class = root_class
+            self.hash = hash_selection
+            self.UIObject = {}
+            self.UIConfig = {}
+            self.UIConfig.update(dictColorContext)
+
+        def start(self):
+            self.UIObject['root'] = tkinter.Toplevel(self.root)
+            self.UIObject['root'].title('配置恢复模块')
+            self.UIObject['root'].geometry('400x350')
+            self.UIObject['root'].minsize(400, 350)
+            self.UIObject['root'].resizable(True, True)
+            self.UIObject['root'].grid_rowconfigure(0, weight=0)
+            self.UIObject['root'].grid_rowconfigure(1, weight=1)
+            self.UIObject['root'].grid_columnconfigure(0, weight=1)
+            self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
+
+            # 说明标签
+            label_info = tkinter.Label(
+                self.UIObject['root'],
+                text="在此处编辑恢复时使用的模块列表，每行一个模块名。\n恢复操作将从这些模块加载默认回复词。\n注意：\n1. 模块名必须与实际模块名一致。\n2. 若选择的模块不存在或没有在\n该模块的msgCustom.py里定义默认回复词，\n则会跳过该模块。\n3. 模块名区分大小写。\n4. 清空文本框将加载默认模块。",
+                font=('等线', 11),
+                bg=self.UIConfig['color_001'],
+                fg=self.UIConfig['color_004'],
+                justify='left'
+            )
+            label_info.grid(row=0, column=0, padx=15, pady=(15, 5), sticky="ew")
+
+            # 文本框
+            self.UIObject['text_modules'] = tkinter.Text(
+                self.UIObject['root'],
+                wrap=tkinter.WORD,
+                bg=self.UIConfig['color_004'],
+                fg=self.UIConfig['color_005'],
+                bd=0,
+                font=(None, 10),
+                padx=4,
+                pady=8
+            )
+            self.UIObject['text_modules'].grid(row=1, column=0, padx=15, pady=(0, 15), sticky="nsew")
+
+            # 加载当前模块
+            current_modules = self.root_class.load_recover_modules(self.hash)
+            self.UIObject['text_modules'].insert('1.0', '\n'.join(current_modules))
+            
+            # 绑定关闭事件
+            self.UIObject['root'].protocol("WM_DELETE_WINDOW", self.quit)
+            self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
+            self.UIObject['root'].mainloop()
+
+        def quit(self):
+            self.save()
+            self.UIObject['root'].destroy()
+
+        def save(self):
+            """获取文本框内容并保存"""
+            content = self.UIObject['text_modules'].get('1.0', tkinter.END)
+            # 按行分割，并移除空行和首尾空格
+            modules_list = [line.strip() for line in content.splitlines() if line.strip()]
+            self.root_class.save_recover_modules(self.hash, modules_list)
 
     class edit_console_UI(object):
         def __init__(self, root_obj, root_class, key, hash):
@@ -1848,16 +1984,12 @@ class ConfigUI(object):
         tmp_hashSelection = self.UIData['hash_now']
         # 全局模式禁用回复词里的所有按钮
         is_global_mode = (tmp_hashSelection == 'unity')
-        if is_global_mode:
-            for button_name in ['buttom_reset_str', 'buttom_import_str', 'buttom_export_str', 
-                               'buttom_refresh_str', 'buttom_reset_delete_str']:
-                if button_name in self.UIObject:
-                    self.UIObject[button_name].config(state=tkinter.DISABLED)
-        else:
-            for button_name in ['buttom_reset_str', 'buttom_import_str', 'buttom_export_str', 
-                               'buttom_refresh_str', 'buttom_reset_delete_str']:
-                if button_name in self.UIObject:
-                    self.UIObject[button_name].config(state=tkinter.NORMAL)
+        buttons_to_disable_in_global = ['buttom_config_restore', 'buttom_reset_str', 'buttom_import_str', 'buttom_export_str', 
+                                        'buttom_refresh_str', 'buttom_reset_delete_str']
+        for button_name in buttons_to_disable_in_global:
+            if button_name in self.UIObject:
+                state = tkinter.DISABLED if is_global_mode else tkinter.NORMAL
+                self.UIObject[button_name].config(state=state)
 
         self.UIData['onlineStatus_Label_root_StringVar'].set('当前在线: %s' % OlivaDiceNativeGUI.load.onlineAPICount)
 
@@ -2030,9 +2162,9 @@ class ConfigUI(object):
                         
     def reset_str_confirm(self):
         """显示恢复默认回复词的确认对话框"""
-        if tkinter.messagebox.askyesno(
+        if messagebox.askyesno(
             "确认恢复",
-            "确定要恢复所有回复词为默认值吗？这将删除所有自定义回复词。",
+            "确定要恢复配置恢复模块中的回复词为默认值吗？这将删除这些模块中自定义的回复词。",
             parent=self.UIObject['root']
         ):
             self.reset_str_default()
@@ -2045,11 +2177,11 @@ class ConfigUI(object):
             OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = {}
             OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
             self.init_data_total()
-            tkinter.messagebox.showinfo("完成", "已恢复所有回复词为默认值", parent=self.UIObject['root'])
+            messagebox.showinfo("完成", "已恢复配置恢复模块为默认值", parent=self.UIObject['root'])
 
     def reset_console_confirm(self):
         """显示恢复默认配置的确认对话框"""
-        if tkinter.messagebox.askyesno(
+        if messagebox.askyesno(
             "确认恢复",
             "确定要恢复所有配置项为默认值吗？这将重置所有自定义配置。",
             parent=self.UIObject['root']
@@ -2067,13 +2199,13 @@ class ConfigUI(object):
             OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection]['masterList'] = current_master_list
             OlivaDiceCore.console.saveConsoleSwitch()
             self.init_data_total()
-            tkinter.messagebox.showinfo("完成", "已恢复所有配置项为默认值", parent=self.UIObject['root'])
+            messagebox.showinfo("完成", "已恢复所有配置项为默认值", parent=self.UIObject['root'])
 
     def reset_selected_str(self):
         """恢复或删除选中的回复词"""
         tmp_key = get_tree_force(self.UIObject['tree_str'])['text']
         if not tmp_key:
-            tkinter.messagebox.showwarning("警告", "请先选择要操作的回复词", parent=self.UIObject['root'])
+            messagebox.showwarning("警告", "请先选择要操作的回复词", parent=self.UIObject['root'])
             return
 
         tmp_hashSelection = self.UIData['hash_now']
@@ -2081,7 +2213,7 @@ class ConfigUI(object):
         default_str_dict = self.default_reply_config_for_delete().copy()
 
         if tmp_key in default_str_dict:
-            if tkinter.messagebox.askyesno(
+            if messagebox.askyesno(
                 "确认恢复",
                 f"确定要恢复'{tmp_key}'的回复词为默认值吗？",
                 parent=self.UIObject['root']
@@ -2095,7 +2227,7 @@ class ConfigUI(object):
                 OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
                 self.init_data_total()
         else:
-            if tkinter.messagebox.askyesno(
+            if messagebox.askyesno(
                 "确认删除",
                 f"确定要删除'{tmp_key}'的自定义回复词吗？",
                 parent=self.UIObject['root']
@@ -2115,7 +2247,7 @@ class ConfigUI(object):
         """恢复选中的配置项为默认值"""
         tmp_key = get_tree_force(self.UIObject['tree_console'])['text']
         if not tmp_key:
-            tkinter.messagebox.showwarning("警告", "请先选择要操作的配置项", parent=self.UIObject['root'])
+            messagebox.showwarning("警告", "请先选择要操作的配置项", parent=self.UIObject['root'])
             return
 
         tmp_hashSelection = self.UIData['hash_now']
@@ -2123,7 +2255,7 @@ class ConfigUI(object):
         current_console_dict = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {})
 
         if tmp_key in default_config:
-            if tkinter.messagebox.askyesno(
+            if messagebox.askyesno(
                 "确认恢复",
                 f"确定要恢复'{tmp_key}'的配置为默认值吗？",
                 parent=self.UIObject['root']
@@ -2137,7 +2269,7 @@ class ConfigUI(object):
                 OlivaDiceCore.console.saveConsoleSwitch()
                 self.init_data_total()
         else:
-            if tkinter.messagebox.askyesno(
+            if messagebox.askyesno(
                 "确认删除",
                 f"确定要删除'{tmp_key}'的自定义配置吗？",
                 parent=self.UIObject['root']
@@ -2150,7 +2282,7 @@ class ConfigUI(object):
 
     def import_str_config(self):
         """导入回复词配置"""
-        file_path = tkinter.filedialog.askopenfilename(
+        file_path = filedialog.askopenfilename(
             title="选择回复词配置文件",
             filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")],
             parent=self.UIObject['root']
@@ -2161,7 +2293,7 @@ class ConfigUI(object):
                     import_data = json.load(f)
                 if not isinstance(import_data, dict):
                     raise ValueError("配置文件格式不正确，必须是一个JSON文件")
-                if tkinter.messagebox.askyesno(
+                if messagebox.askyesno(
                     "确认导入",
                     f"确定要导入回复词配置吗？这将覆盖当前配置。",
                     parent=self.UIObject['root']
@@ -2181,18 +2313,18 @@ class ConfigUI(object):
                         OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = updated_update
                         OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
                         self.init_data_total()
-                        tkinter.messagebox.showinfo("完成", "回复词配置导入成功", parent=self.UIObject['root'])
+                        messagebox.showinfo("完成", "回复词配置导入成功", parent=self.UIObject['root'])
                     except Exception as e:
                         OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = backup_data
                         OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = backup_update
                         self.init_data_total()
                         raise
             except Exception as e:
-                tkinter.messagebox.showerror("错误", f"导入失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+                messagebox.showerror("错误", f"导入失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
 
     def export_str_config(self):
         """导出回复词配置"""
-        file_path = tkinter.filedialog.asksaveasfilename(
+        file_path = filedialog.asksaveasfilename(
             title="保存回复词配置文件",
             defaultextension=".json",
             initialfile="customReply.json",
@@ -2205,13 +2337,13 @@ class ConfigUI(object):
                 export_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {})
                 with open(file_path, 'w', encoding='utf-8') as f:
                     json.dump(export_data, f, ensure_ascii=False, indent=4)
-                tkinter.messagebox.showinfo("完成", "回复词配置导出成功", parent=self.UIObject['root'])
+                messagebox.showinfo("完成", "回复词配置导出成功", parent=self.UIObject['root'])
             except Exception as e:
-                tkinter.messagebox.showerror("错误", f"导出失败: {str(e)}", parent=self.UIObject['root'])
+                messagebox.showerror("错误", f"导出失败: {str(e)}", parent=self.UIObject['root'])
 
     def refresh_str_config(self):
         """刷新回复词配置"""
-        if tkinter.messagebox.askyesno(
+        if messagebox.askyesno(
             "确认刷新",
             "确定要从文件重新加载回复词配置吗？这将覆盖当前所有修改。",
             parent=self.UIObject['root']
@@ -2240,15 +2372,15 @@ class ConfigUI(object):
                     raise ValueError(f"读取自定义回复文件失败: {str(e)}")
 
                 self.init_data_total()
-                tkinter.messagebox.showinfo("完成", "回复词配置刷新成功", parent=self.UIObject['root'])
+                messagebox.showinfo("完成", "回复词配置刷新成功", parent=self.UIObject['root'])
             except Exception as e:
                 OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = backup_data
                 OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = backup_update
-                tkinter.messagebox.showerror("错误", f"刷新失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+                messagebox.showerror("错误", f"刷新失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
 
     def import_console_config(self):
         """导入控制台配置"""
-        file_path = tkinter.filedialog.askopenfilename(
+        file_path = filedialog.askopenfilename(
             title="选择控制台配置文件",
             filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")],
             parent=self.UIObject['root']
@@ -2261,7 +2393,7 @@ class ConfigUI(object):
                 if not isinstance(import_data, dict):
                     raise ValueError("配置文件格式不正确，必须是一个JSON文件")
 
-                if tkinter.messagebox.askyesno(
+                if messagebox.askyesno(
                     "确认导入",
                     f"确定要导入控制台配置吗？这将覆盖当前配置。",
                     parent=self.UIObject['root']
@@ -2275,18 +2407,18 @@ class ConfigUI(object):
                         OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = current_config
                         OlivaDiceCore.console.saveConsoleSwitch()
                         self.init_data_total()
-                        tkinter.messagebox.showinfo("完成", "控制台配置导入成功", parent=self.UIObject['root'])
+                        messagebox.showinfo("完成", "控制台配置导入成功", parent=self.UIObject['root'])
                     except Exception as e:
                         OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = backup_data
                         OlivaDiceCore.console.saveConsoleSwitch()
                         self.init_data_total()
                         raise
             except Exception as e:
-                tkinter.messagebox.showerror("错误", f"导入失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+                messagebox.showerror("错误", f"导入失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
 
     def export_console_config(self):
         """导出控制台配置"""
-        file_path = tkinter.filedialog.asksaveasfilename(
+        file_path = filedialog.asksaveasfilename(
             title="保存控制台配置文件",
             defaultextension=".json",
             initialfile="switch.json",
@@ -2299,13 +2431,13 @@ class ConfigUI(object):
                 export_data = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {})
                 with open(file_path, 'w', encoding='utf-8') as f:
                     json.dump(export_data, f, ensure_ascii=False, indent=4)
-                tkinter.messagebox.showinfo("完成", "控制台配置导出成功", parent=self.UIObject['root'])
+                messagebox.showinfo("完成", "控制台配置导出成功", parent=self.UIObject['root'])
             except Exception as e:
-                tkinter.messagebox.showerror("错误", f"导出失败: {str(e)}", parent=self.UIObject['root'])
+                messagebox.showerror("错误", f"导出失败: {str(e)}", parent=self.UIObject['root'])
 
     def refresh_console_config(self):
         """刷新控制台配置"""
-        if tkinter.messagebox.askyesno(
+        if messagebox.askyesno(
             "确认刷新",
             "确定要从文件重新加载控制台配置吗？这将覆盖当前所有修改。",
             parent=self.UIObject['root']
@@ -2334,40 +2466,44 @@ class ConfigUI(object):
                 OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = merged_config
                 OlivaDiceCore.console.saveConsoleSwitch()
                 self.init_data_total()
-                tkinter.messagebox.showinfo("完成", "控制台配置刷新成功", parent=self.UIObject['root'])
+                messagebox.showinfo("完成", "控制台配置刷新成功", parent=self.UIObject['root'])
             except Exception as e:
                 OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = backup_data
-                tkinter.messagebox.showerror("错误", f"刷新失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+                messagebox.showerror("错误", f"刷新失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
     
     def default_reply_config(self):
         '''导入所有的dictStrCustom'''
         # 获取当前内存中的回复词配置
         tmp_hashSelection = self.UIData['hash_now']
         current_config = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
-        default_reply = OlivaDiceCore.msgCustom.dictStrCustom.copy()
-        import_list = ['OlivaDiceJoy', 'OlivaDiceMaster', 'OlivaDiceLogger', 'OlivaDiceOdyssey', 'OlivaStoryCore']
+        default_reply = {}
+        # 从配置文件加载模块列表
+        import_list = self.load_recover_modules(tmp_hashSelection)
         for module_name in import_list:
             try:
                 module = importlib.import_module(module_name)
-                default_reply.update(module.msgCustom.dictStrCustom)
-            except:
+                if hasattr(module, 'msgCustom') and hasattr(module.msgCustom, 'dictStrCustom'):
+                    default_reply.update(module.msgCustom.dictStrCustom)
+            except (ImportError, AttributeError):
                 continue
         default_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
         merged_config = current_config.copy()
         for key in default_reply:
             merged_config[key] = default_reply[key]
-
         return merged_config
-
+    
     def default_reply_config_for_delete(self):
         '''导入所有的dictStrCustom-删除用'''
-        default_reply = OlivaDiceCore.msgCustom.dictStrCustom.copy()
-        import_list = ['OlivaDiceJoy', 'OlivaDiceMaster', 'OlivaDiceLogger', 'OlivaDiceOdyssey', 'OlivaStoryCore']
+        default_reply = {}
+        # 从配置文件加载模块列表
+        tmp_hashSelection = self.UIData['hash_now']
+        import_list = self.load_recover_modules(tmp_hashSelection)
         for module_name in import_list:
             try:
                 module = importlib.import_module(module_name)
-                default_reply.update(module.msgCustom.dictStrCustom)
-            except:
+                if hasattr(module, 'msgCustom') and hasattr(module.msgCustom, 'dictStrCustom'):
+                    default_reply.update(module.msgCustom.dictStrCustom)
+            except (ImportError, AttributeError):
                 continue
         default_reply.update(OlivaDiceNativeGUI.msgCustom.dictStrCustom)
         return default_reply
