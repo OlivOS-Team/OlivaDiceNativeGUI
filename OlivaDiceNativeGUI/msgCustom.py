@@ -317,6 +317,11 @@ dictStrCustomNote = {
     'strLoggerLogRenameNameExists': '【.log rename】指令\n日志重命名的名字已存在',
     'strLoggerLogStatus': '【.log status】指令\n查看当前日志状态',
     'strLoggerLogStatusNoLog': '【.log status】指令\n当前没有活跃日志',
+    'strLoggerLogQuote': '【.log on/quote】指令\n引用上次结束日志',
+    'strLoggerLogQuoteOn' : "【.log quote】指令\n开启自动引用上次结束日志功能",
+    'strLoggerLogQuoteAlreadyOn' : "【.log quote】指令\n自动引用上次结束日志功能已开启",
+    'strLoggerLogQuoteOff' : "【.log quote】指令\n关闭自动引用上次结束日志功能",
+    'strLoggerLogQuoteAlreadyOff' : "【.log quote】指令\n自动引用上次结束日志功能已关闭",
 
     # OlivaDiceMaster
     'strMasterReply': '',
