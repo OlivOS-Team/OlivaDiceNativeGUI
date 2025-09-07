@@ -318,6 +318,7 @@ dictStrCustomNote = {
     'strLoggerLogStatus': '【.log status】指令\n查看当前日志状态',
     'strLoggerLogStatusNoLog': '【.log status】指令\n当前没有活跃日志',
     'strLoggerLogQuote': '【.log on/quote】指令\n引用结束日志',
+    'strLoggerLogQuoteError': '【.log quote】指令\n引用结束日志失败',
     'strLoggerLogQuoteOn' : "【.log quote】指令\n开启自动引用上次结束日志功能",
     'strLoggerLogQuoteAlreadyOn' : "【.log quote】指令\n自动引用上次结束日志功能已开启",
     'strLoggerLogQuoteOff' : "【.log quote】指令\n关闭自动引用上次结束日志功能",
