@@ -401,6 +401,7 @@ dictConsoleSwitchNote = {
     'censorMatchMode' : '敏感词审查匹配模式\n 0 短词条优先\n 1 长词条优先（默认）',
     'joyPokeMode' : '戳一戳回复模式\n 0 返回默认版本号\n 1 进行一次默认骰掷骰\n 2 进行一次今日人品查询\n 3 关闭回复',
     'joyEnableCCPK' : '是否对回复词启用程心自定义解析\n 0 默认原版\n 1 开启程心自定义解析',
+    'differentJrrpMode' : '是否启用不同用户在不同的 Bot 中今日人品结果不同，默认关闭\n 0 关闭\n 1 开启',
     'masterAutoUpdate' : '是否进行自动更新\n 0 关闭自动更新\n 1 开启自动更新',
     'odysseyRulesItemLimit' : '规则速查单页显示条目数量上限',
     'odysseyKOOKBotMarketPulseEnable' : '是否启用KOOK机器人服务平台心跳对接, 默认关闭\n 0 关闭\n 1 开启',
