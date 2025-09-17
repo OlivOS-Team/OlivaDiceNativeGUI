@@ -31,6 +31,8 @@ dictTValue = {}
 
 dictHelpDocTemp = {}
 
+dictBackupConfig = {}
+
 dictStrCustomNote = {
     # OlivaDiceCore
     'strBotName': '机器人的自称',
@@ -359,6 +361,14 @@ dictStrCustomNote = {
     'strMasterGroupClearDoUnitSend': '【.group clear do】指令\n被清除群内退群前最后的提示',
     'strMasterGroupClearDo': '【.group clear do】指令\n清除群后的总结',
     'strMasterGroupClearUnit': '【.group clear】指令\n每条群记录的格式',
+    'strMasterBackupStart': '【.backup start】指令\n开始数据备份',
+    'strMasterBackupSuccess': '【.backup start】指令\n数据备份成功',
+    'strMasterBackupFailed': '【.backup start】指令\n数据备份失败',
+    'strMasterBackupConfigSet': '【.backup change】指令\n修改配置项',
+    'strMasterBackupChangeUsage': '【.backup change】指令\n配置项列表',
+    'strMasterBackupConfigGet': '【.backup】指令\n查看配置项',
+    'strMasterBackupConfigNotFound': '【.backup】指令\n未找到配置项',
+    'strMasterBackupInfo': '【.backup】指令\n备份相关条目信息',
     
     # OlivaDiceOdyssey
     'strOdysseyCnmodsSearch': '【.cnmods search】指令\n魔都模组搜索',
@@ -409,4 +419,12 @@ dictConsoleSwitchNote = {
     'odysseyKOOKBotMarketPulseEnable' : '是否启用KOOK机器人服务平台心跳对接, 默认关闭\n 0 关闭\n 1 开启',
     'odysseyKOOKPlayGameMode': '在玩游戏/听音乐模式\n 0 关闭\n 1 正在玩 青果核心OlivaDice\n 2 正在听音乐 歌名、歌手可用对应str设置\n 3 正在玩游戏 游戏ID可用对应str设置',
     'odysseyKOOKPlayGameMusicSoftware': '在玩听音乐的平台, 默认网易云\n 0 网易云\n 1 QQ音乐\n 2 酷狗音乐'
+}
+
+dictBackupConfigNote = {
+    'isBackup': '是否启用自动备份\n0: 启用 1: 禁用\n只能为0或1\n例如：0',
+    'startDate': '备份起始日期\n格式：yyyy-MM-dd\n例如：2025-09-01',
+    'passDay': '从备份开始日期为起始，每隔多少天备份一次\n数值类型，单位为天\n例如：1',
+    'backupTime': '进行备份的时间点\n格式：HH:mm:ss\n例如：04:00:00',
+    'maxBackupCount': '最大备份数量\n数值类型，必须大于0\n例如：1'
 }
