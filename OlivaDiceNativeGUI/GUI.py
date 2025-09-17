@@ -136,6 +136,10 @@ class ConfigUI(object):
         # 配置项
         self.init_frame_console()
 
+        # 备份
+        if OlivaDiceNativeGUI.load.backupFlag:
+            self.init_frame_backup()
+
         # 骰主列表
         self.init_frame_master()
 
@@ -147,7 +151,19 @@ class ConfigUI(object):
         self.UIObject['Notebook_root'].add(self.UIObject['frame_deck_root'], text="牌堆管理")
         self.UIObject['Notebook_root'].add(self.UIObject['frame_str_root'], text="回复词")
         self.UIObject['Notebook_root'].add(self.UIObject['frame_console_root'], text="配置项")
+        
+        # 只有在有 OlivaDiceMaster 模块时才显示备份选项卡
+        if OlivaDiceNativeGUI.load.backupFlag:
+            self.UIObject['Notebook_root'].add(self.UIObject['frame_backup_root'], text="备份")
+        
         self.UIObject['Notebook_root'].add(self.UIObject['frame_master_root'], text="骰主列表")
+
+        # 只有在有 OlivaDiceMaster 模块时才加载备份配置
+        if OlivaDiceNativeGUI.load.backupFlag:
+            try:
+                self.load_backup_config()
+            except Exception as e:
+                print(f"警告: 加载备份配置失败: {str(e)}")
 
         self.init_data_total()
 
@@ -917,6 +933,182 @@ class ConfigUI(object):
         self.UIObject['buttom_reset_delete_console'].bind('<Enter>', lambda x : self.buttom_action('buttom_reset_delete_console', '<Enter>'))
         self.UIObject['buttom_reset_delete_console'].bind('<Leave>', lambda x : self.buttom_action('buttom_reset_delete_console', '<Leave>'))
         self.UIObject['buttom_reset_delete_console'].pack(side = tkinter.RIGHT, padx = (0, 5))
+
+    def init_frame_backup(self):
+        self.UIObject['frame_backup_root'] = tkinter.Frame(self.UIObject['Notebook_root'])
+        self.UIObject['frame_backup_root'].configure(relief = tkinter.FLAT)
+        self.UIObject['frame_backup_root'].grid(
+            row = 1,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+        self.UIObject['frame_backup_root'].grid_rowconfigure(0, weight = 0)
+        self.UIObject['frame_backup_root'].grid_rowconfigure(1, weight = 15)
+        self.UIObject['frame_backup_root'].grid_rowconfigure(2, weight = 0)
+        self.UIObject['frame_backup_root'].grid_columnconfigure(0, weight = 15)
+        self.UIObject['frame_backup_root'].configure(bg = self.UIConfig['color_001'], borderwidth = 0)
+
+        self.UIObject['tree_backup'] = ttk.Treeview(self.UIObject['frame_backup_root'])
+        self.UIObject['tree_backup']['show'] = 'headings'
+        self.UIObject['tree_backup']['columns'] = ('KEY', 'NOTE', 'DATA')
+        self.UIObject['tree_backup'].column('KEY', width = 140)
+        self.UIObject['tree_backup'].column('NOTE', width = 410)
+        self.UIObject['tree_backup'].column('DATA', width = 140)
+        self.UIObject['tree_backup'].heading('KEY', text = '条目')
+        self.UIObject['tree_backup'].heading('NOTE', text = '说明')
+        self.UIObject['tree_backup'].heading('DATA', text = '内容')
+        self.UIObject['tree_backup'].grid(
+            row = 1,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+        self.UIObject['tree_rightkey_menu_backup'] = tkinter.Menu(self.UIObject['root'], tearoff = False)
+        self.UIObject['tree_backup'].bind('<Button-3>', lambda x : self.tree_backup_rightKey(x))
+        self.UIObject['tree_backup_yscroll'] = ttk.Scrollbar(
+            self.UIObject['frame_backup_root'],
+            orient = "vertical",
+            command = self.UIObject['tree_backup'].yview
+        )
+        self.UIObject['tree_backup'].configure(
+            yscrollcommand = self.UIObject['tree_backup_yscroll'].set
+        )
+        self.UIObject['tree_backup_yscroll'].grid(
+            row = 1,
+            column = 1,
+            sticky = "nsw",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+
+        self.UIObject['button_frame_backup'] = tkinter.Frame(self.UIObject['frame_backup_root'])
+        self.UIObject['button_frame_backup'].configure(bg = self.UIConfig['color_001'])
+        self.UIObject['button_frame_backup'].grid(
+            row = 2,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 2,
+            padx = (15, 15),
+            pady = (8, 0)
+        )
+
+        self.UIObject['buttom_reset_backup'] = tkinter.Button(
+            self.UIObject['button_frame_backup'],
+            text = '恢复默认配置',
+            command = lambda : self.reset_backup_confirm(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_reset_backup'].bind('<Enter>', lambda x : self.buttom_action('buttom_reset_backup', '<Enter>'))
+        self.UIObject['buttom_reset_backup'].bind('<Leave>', lambda x : self.buttom_action('buttom_reset_backup', '<Leave>'))
+        self.UIObject['buttom_reset_backup'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_import_backup'] = tkinter.Button(
+            self.UIObject['button_frame_backup'],
+            text = '导入备份配置',
+            command = lambda : self.import_backup_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_import_backup'].bind('<Enter>', lambda x : self.buttom_action('buttom_import_backup', '<Enter>'))
+        self.UIObject['buttom_import_backup'].bind('<Leave>', lambda x : self.buttom_action('buttom_import_backup', '<Leave>'))
+        self.UIObject['buttom_import_backup'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_export_backup'] = tkinter.Button(
+            self.UIObject['button_frame_backup'],
+            text = '导出备份配置',
+            command = lambda : self.export_backup_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_export_backup'].bind('<Enter>', lambda x : self.buttom_action('buttom_export_backup', '<Enter>'))
+        self.UIObject['buttom_export_backup'].bind('<Leave>', lambda x : self.buttom_action('buttom_export_backup', '<Leave>'))
+        self.UIObject['buttom_export_backup'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_refresh_backup'] = tkinter.Button(
+            self.UIObject['button_frame_backup'],
+            text = '刷新备份配置',
+            command = lambda : self.refresh_backup_config(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_refresh_backup'].bind('<Enter>', lambda x : self.buttom_action('buttom_refresh_backup', '<Enter>'))
+        self.UIObject['buttom_refresh_backup'].bind('<Leave>', lambda x : self.buttom_action('buttom_refresh_backup', '<Leave>'))
+        self.UIObject['buttom_refresh_backup'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIObject['buttom_edit_backup'] = tkinter.Button(
+            self.UIObject['button_frame_backup'],
+            text = '编辑',
+            command = lambda : self.tree_backup_edit(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_edit_backup'].bind('<Enter>', lambda x : self.buttom_action('buttom_edit_backup', '<Enter>'))
+        self.UIObject['buttom_edit_backup'].bind('<Leave>', lambda x : self.buttom_action('buttom_edit_backup', '<Leave>'))
+        self.UIObject['buttom_edit_backup'].pack(side = tkinter.RIGHT)
+
+        self.UIObject['buttom_reset_delete_backup'] = tkinter.Button(
+            self.UIObject['button_frame_backup'],
+            text = '恢复/删除',
+            command = lambda : self.reset_selected_backup(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['buttom_reset_delete_backup'].bind('<Enter>', lambda x : self.buttom_action('buttom_reset_delete_backup', '<Enter>'))
+        self.UIObject['buttom_reset_delete_backup'].bind('<Leave>', lambda x : self.buttom_action('buttom_reset_delete_backup', '<Leave>'))
+        self.UIObject['buttom_reset_delete_backup'].pack(side = tkinter.RIGHT, padx = (0, 5))
 
     def init_frame_master(self):
         self.UIObject['frame_master_root'] = tkinter.Frame(self.UIObject['Notebook_root'])
@@ -1987,6 +2179,164 @@ class ConfigUI(object):
                 except:
                     pass
 
+    class edit_backup_UI(object):
+        def __init__(self, root_class, key, value):
+            self.root_class = root_class
+            self.key = key
+            self.value = value
+            self.UIObject = {}
+            self.UIData = {}
+            self.UIConfig = {}
+            self.UIConfig.update(dictColorContext)
+            self.start()
+            
+        def start(self):
+            self.UIObject['root'] = tkinter.Toplevel(self.root_class.UIObject['root'])
+            self.UIObject['root'].title('修改备份配置 - %s' % self.key)
+            self.UIObject['root'].minsize(400, 10)
+            self.UIObject['root'].resizable(
+                width = True,
+                height = False
+            )
+            self.UIObject['root'].grid_rowconfigure(0, weight = 0)
+            self.UIObject['root'].grid_rowconfigure(1, weight = 15)
+            self.UIObject['root'].grid_columnconfigure(0, weight = 15)
+            self.UIObject['root'].configure(bg = self.UIConfig['color_001'])
+
+            # 获取说明信息
+            tmp_info = '无说明'
+            if self.key in OlivaDiceNativeGUI.msgCustom.dictBackupConfigNote:
+                tmp_info = OlivaDiceNativeGUI.msgCustom.dictBackupConfigNote[self.key]
+
+            self.UIObject['label_note'] = tkinter.Label(
+                self.UIObject['root'],
+                text = tmp_info,
+                font = ('等线', 12, 'bold')
+            )
+            self.UIObject['label_note'].configure(
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_004'],
+                justify = 'left',
+                anchor = 'nw'
+            )
+            self.UIObject['label_note'].grid(
+                row = 0,
+                column = 0,
+                sticky = "nsew",
+                rowspan = 1,
+                columnspan = 1,
+                padx = (15, 15),
+                pady = (15, 0),
+                ipadx = 0,
+                ipady = 0
+            )
+
+            self.UIData['entry_edit_StringVar'] = tkinter.StringVar()
+            self.UIObject['entry_edit'] = tkinter.Entry(
+                self.UIObject['root'],
+                textvariable = self.UIData['entry_edit_StringVar']
+            )
+            self.UIObject['entry_edit'].configure(
+                bg = self.UIConfig['color_006'],
+                fg = self.UIConfig['color_001'],
+                bd = 0,
+                font = ('等线', 12, 'bold'),
+                justify = 'center'
+            )
+            self.UIObject['entry_edit'].grid(
+                row = 1,
+                column = 0,
+                sticky = "n",
+                rowspan = 1,
+                columnspan = 1,
+                padx = (15, 15),
+                pady = (8, 15),
+                ipadx = 0,
+                ipady = 8
+            )
+            self.UIData['entry_edit_StringVar'].set(str(self.value))
+
+            self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
+            self.UIObject['root'].protocol("WM_DELETE_WINDOW", self.quit)
+            self.UIObject['root'].mainloop()
+
+        def quit(self):
+            self.save()
+            if self.root_class != None:
+                self.root_class.init_data_total()
+            self.UIObject['root'].destroy()
+
+        def save(self):
+            tmp_new_str = self.UIData['entry_edit_StringVar'].get().strip()
+            
+            # 验证和转换数据
+            try:
+                if self.key == 'startDate':
+                    # 验证日期格式 yyyy-MM-dd
+                    import datetime
+                    import re
+                    # 先检查格式是否严格为 yyyy-MM-dd
+                    if not re.match(r'^\d{4}-\d{2}-\d{2}$', tmp_new_str):
+                        raise ValueError("日期格式必须为 yyyy-MM-dd")
+                    # 再验证日期是否有效
+                    datetime.datetime.strptime(tmp_new_str, '%Y-%m-%d')
+                    final_value = tmp_new_str
+                elif self.key == 'passDay':
+                    # 验证整数
+                    final_value = int(tmp_new_str)
+                    if final_value <= 0:
+                        raise ValueError("天数不能为负数或0")
+                elif self.key == 'backupTime':
+                    # 验证时间格式 HH:mm:ss
+                    import datetime
+                    import re
+                    # 先检查格式是否严格为 HH:mm:ss（两位数:两位数:两位数）
+                    if not re.match(r'^\d{2}:\d{2}:\d{2}$', tmp_new_str):
+                        raise ValueError("时间格式必须为 HH:mm:ss")
+                    # 再验证时间是否有效
+                    datetime.datetime.strptime(tmp_new_str, '%H:%M:%S')
+                    final_value = tmp_new_str
+                elif self.key == 'maxBackupCount':
+                    # 验证整数
+                    final_value = int(tmp_new_str)
+                    if final_value <= 0:
+                        raise ValueError("备份数量不能为负数或0")
+                elif self.key == 'isBackup':
+                    # 验证整数
+                    final_value = int(tmp_new_str)
+                    if final_value not in [0, 1]:
+                        raise ValueError("备份开关只能为0或1")
+                else:
+                    # 其他配置项按字符串处理
+                    final_value = tmp_new_str
+                
+                # 保存到配置中
+                if 'unity' not in OlivaDiceCore.console.dictBackupConfig:
+                    OlivaDiceCore.console.dictBackupConfig['unity'] = {}
+                
+                OlivaDiceCore.console.dictBackupConfig['unity'][self.key] = final_value
+                self.root_class.save_backup_config()
+                
+            except ValueError as e:
+                if self.key == 'startDate':
+                    messagebox.showerror("格式错误", "日期格式应为 yyyy-MM-dd\n例如：2025-09-01", parent=self.UIObject['root'])
+                elif self.key == 'passDay':
+                    messagebox.showerror("格式错误", "天数应为非负整数\n例如：1", parent=self.UIObject['root'])
+                elif self.key == 'backupTime':
+                    messagebox.showerror("格式错误", "时间格式应为 HH:mm:ss\n例如：04:00:00", parent=self.UIObject['root'])
+                elif self.key == 'maxBackupCount':
+                    messagebox.showerror("格式错误", "备份数量必须为大于0的整数\n例如：1", parent=self.UIObject['root'])
+                elif self.key == 'isBackup':
+                    messagebox.showerror("格式错误", "备份开关只能为0或1\n0: 启用 1: 禁用\n例如：0", parent=self.UIObject['root'])
+                else:
+                    messagebox.showerror("格式错误", f"输入格式错误: {str(e)}", parent=self.UIObject['root'])
+                return False
+            except Exception as e:
+                messagebox.showerror("保存失败", f"保存配置时出错: {str(e)}", parent=self.UIObject['root'])
+                return False
+            
+            return True
+
     def init_data_total(self):
         tmp_hashSelection = self.UIData['hash_now']
         # 全局模式禁用回复词里的所有按钮
@@ -2058,6 +2408,37 @@ class ConfigUI(object):
                         )
                 except:
                     pass
+
+        # 备份配置树视图更新（只有在有 OlivaDiceMaster 模块时才更新）
+        if OlivaDiceNativeGUI.load.backupFlag and 'tree_backup' in self.UIObject:
+            tmp_tree_item_children = self.UIObject['tree_backup'].get_children()
+            for tmp_tree_item_this in tmp_tree_item_children:
+                self.UIObject['tree_backup'].delete(tmp_tree_item_this)
+            if 'unity' in OlivaDiceCore.console.dictBackupConfig:
+                tmp_dictBackupConfig = OlivaDiceCore.console.dictBackupConfig['unity']
+                for tmp_dictBackupConfig_this in tmp_dictBackupConfig:
+                    try:
+                        tmp_value = str(tmp_dictBackupConfig[tmp_dictBackupConfig_this])
+                        tmp_value = tmp_value.replace('\r\n', r'\r\n')
+                        tmp_value = tmp_value.replace('\n', r'\n')
+                        tmp_value = tmp_value.replace('\r', r'\r')
+                        tmp_note = ''
+                        if tmp_dictBackupConfig_this in OlivaDiceNativeGUI.msgCustom.dictBackupConfigNote:
+                            tmp_note = OlivaDiceNativeGUI.msgCustom.dictBackupConfigNote[tmp_dictBackupConfig_this]
+                        tmp_note = tmp_note.replace('\n', ' ')
+                        tmp_note = tmp_note.replace('\r', ' ')
+                        self.UIObject['tree_backup'].insert(
+                            '',
+                            tkinter.END,
+                            text = tmp_dictBackupConfig_this,
+                            values=(
+                                tmp_dictBackupConfig_this,
+                                tmp_note,
+                                tmp_value
+                            )
+                        )
+                    except:
+                        pass
 
         tmp_tree_item_children = self.UIObject['tree_master'].get_children()
         for tmp_tree_item_this in tmp_tree_item_children:
@@ -2499,6 +2880,340 @@ class ConfigUI(object):
             except Exception as e:
                 OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = backup_data
                 messagebox.showerror("错误", f"刷新失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+
+    # 备份配置相关方法
+    def get_backup_config_defaults(self):
+        """获取备份配置的默认值"""
+        import datetime
+        
+        defaults = {}
+        
+        # startDate 默认为当前日期
+        defaults['startDate'] = datetime.date.today().strftime('%Y-%m-%d')
+        backup_template = OlivaDiceCore.console.dictBackupConfigTemplate.get('default', {})
+        defaults['passDay'] = int(backup_template['passDay'])
+        defaults['backupTime'] = str(backup_template['backupTime'])
+        defaults['maxBackupCount'] = int(backup_template['maxBackupCount'])
+        defaults['isBackup'] = int(backup_template.get('isBackup', 0))  # 默认为 0（启用）
+        
+        return defaults
+
+    def validate_backup_config_item(self, key, value):
+        """验证单个备份配置项的格式"""
+        import datetime
+        import re
+        
+        try:
+            if key == 'startDate':
+                # 验证日期格式 yyyy-MM-dd
+                if not isinstance(value, str):
+                    raise ValueError("日期必须为字符串格式")
+                if not re.match(r'^\d{4}-\d{2}-\d{2}$', value):
+                    raise ValueError("日期格式必须为 yyyy-MM-dd")
+                datetime.datetime.strptime(value, '%Y-%m-%d')
+            elif key == 'passDay':
+                # 验证整数
+                if not isinstance(value, int):
+                    if isinstance(value, str) and value.isdigit():
+                        value = int(value)
+                    else:
+                        raise ValueError("天数必须为整数")
+                if value <= 0:
+                    raise ValueError("天数不能为负数或0")
+            elif key == 'backupTime':
+                # 验证时间格式 HH:mm:ss
+                if not isinstance(value, str):
+                    raise ValueError("时间必须为字符串格式")
+                if not re.match(r'^\d{2}:\d{2}:\d{2}$', value):
+                    raise ValueError("时间格式必须为 HH:mm:ss")
+                datetime.datetime.strptime(value, '%H:%M:%S')
+            elif key == 'maxBackupCount':
+                # 验证备份最大数量
+                if not isinstance(value, int):
+                    if isinstance(value, str) and value.isdigit():
+                        value = int(value)
+                    else:
+                        raise ValueError("备份数量必须为整数")
+                if value <= 0:
+                    raise ValueError("备份数量不能小于等于0")
+            elif key == 'isBackup':
+                # 验证备份开关
+                if not isinstance(value, int):
+                    if isinstance(value, str) and value.isdigit():
+                        value = int(value)
+                    else:
+                        raise ValueError("备份开关必须为整数")
+                if value not in [0, 1]:
+                    raise ValueError("备份开关只能为0或1，0表示启用，1表示禁用")
+            # 其他配置项按字符串处理，不需要特殊验证
+            return value if key in ['passDay', 'maxBackupCount', 'isBackup'] else str(value)
+        except Exception as e:
+            raise ValueError(f"配置项 '{key}' 格式验证失败: {str(e)}")
+
+    def validate_and_clean_backup_config(self, config_dict):
+        """验证并清理备份配置，将不符合格式的项恢复为默认值"""
+        if not isinstance(config_dict, dict):
+            config_dict = {}
+        
+        defaults = self.get_backup_config_defaults()
+        cleaned_config = {}
+        restored_items = []
+        
+        # 确保必需的配置项存在并有效
+        for required_key in ['startDate', 'passDay', 'backupTime', 'maxBackupCount', 'isBackup']:
+            if required_key in config_dict:
+                try:
+                    cleaned_value = self.validate_backup_config_item(required_key, config_dict[required_key])
+                    cleaned_config[required_key] = cleaned_value
+                except ValueError:
+                    # 验证失败，恢复默认值
+                    cleaned_config[required_key] = defaults[required_key]
+                    restored_items.append(f"{required_key}: 已恢复为默认值 ({defaults[required_key]})")
+            else:
+                # 缺失，设置默认值
+                cleaned_config[required_key] = defaults[required_key]
+                restored_items.append(f"{required_key}: 已设置为默认值 ({defaults[required_key]})")
+        
+        # 处理其他配置项
+        for key, value in config_dict.items():
+            if key not in ['startDate', 'passDay', 'backupTime', 'maxBackupCount', 'isBackup']:
+                try:
+                    cleaned_value = self.validate_backup_config_item(key, value)
+                    cleaned_config[key] = cleaned_value
+                except ValueError:
+                    # 其他配置项验证失败，保持原值但转换为字符串
+                    cleaned_config[key] = str(value)
+        
+        if restored_items:
+            error_msg = "以下配置项已恢复/设置为默认值:\n" + "\n".join(restored_items)
+            messagebox.showinfo("配置恢复提示", error_msg, parent=self.UIObject['root'])
+        
+        return cleaned_config
+
+    def load_backup_config(self):
+        """加载备份配置"""
+        backup_dir = OlivaDiceCore.data.dataDirRoot + '/unity/console'
+        backup_file = 'backup.json'
+        backup_path = backup_dir + '/' + backup_file
+        
+        try:
+            with open(backup_path, 'r', encoding='utf-8') as f:
+                backup_config = json.load(f)
+                if not isinstance(backup_config, dict):
+                    backup_config = {}
+        except (FileNotFoundError, json.JSONDecodeError):
+            backup_config = {}
+        
+        # 验证并清理配置
+        cleaned_config = self.validate_and_clean_backup_config(backup_config)
+        
+        if 'unity' not in OlivaDiceCore.console.dictBackupConfig:
+            OlivaDiceCore.console.dictBackupConfig['unity'] = {}
+        
+        # 如果清理后的配置与原配置不同，需要保存清理后的配置到文件
+        if cleaned_config != backup_config:
+            OlivaDiceCore.console.dictBackupConfig['unity'] = cleaned_config
+            try:
+                self.save_backup_config()
+            except Exception as e:
+                print(f"警告: 保存清理后的备份配置失败: {str(e)}")
+        else:
+            # 更新到内存中的配置
+            OlivaDiceCore.console.dictBackupConfig['unity'].update(cleaned_config)
+
+    def save_backup_config(self):
+        """保存备份配置"""
+        backup_dir = OlivaDiceCore.data.dataDirRoot + '/unity/console'
+        backup_file = 'backup.json'
+        backup_path = backup_dir + '/' + backup_file
+        
+        # 确保目录存在
+        import os
+        if not os.path.exists(backup_dir):
+            os.makedirs(backup_dir)
+        
+        # 保存配置
+        backup_config = OlivaDiceCore.console.dictBackupConfig.get('unity', {})
+        try:
+            with open(backup_path, 'w', encoding='utf-8') as f:
+                json.dump(backup_config, f, ensure_ascii=False, indent=4)
+        except Exception as e:
+            raise Exception(f"保存备份配置失败: {str(e)}")
+
+    def import_backup_config(self):
+        """导入备份配置"""
+        file_path = filedialog.askopenfilename(
+            title="选择备份配置文件",
+            defaultextension=".json",
+            filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")],
+            parent=self.UIObject['root']
+        )
+        if file_path:
+            backup_data = OlivaDiceCore.console.dictBackupConfig.get('unity', {}).copy()
+            try:
+                with open(file_path, 'r', encoding='utf-8') as f:
+                    import_data = json.load(f)
+                    if not isinstance(import_data, dict):
+                        raise ValueError("文件格式不正确，应为JSON对象")
+                    
+                    # 验证并清理导入的配置
+                    cleaned_import_data = self.validate_and_clean_backup_config(import_data)
+                    
+                    if 'unity' not in OlivaDiceCore.console.dictBackupConfig:
+                        OlivaDiceCore.console.dictBackupConfig['unity'] = {}
+                    
+                    OlivaDiceCore.console.dictBackupConfig['unity'].update(cleaned_import_data)
+                    
+                    try:
+                        self.save_backup_config()
+                        self.init_data_total()
+                        messagebox.showinfo("完成", "备份配置导入成功", parent=self.UIObject['root'])
+                    except Exception as e:
+                        OlivaDiceCore.console.dictBackupConfig['unity'] = backup_data
+                        self.save_backup_config()
+                        self.init_data_total()
+                        raise
+            except Exception as e:
+                messagebox.showerror("错误", f"导入失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+
+    def export_backup_config(self):
+        """导出备份配置"""
+        file_path = filedialog.asksaveasfilename(
+            title="保存备份配置文件",
+            defaultextension=".json",
+            initialfile="backup.json",
+            filetypes=[("JSON文件", "*.json"), ("所有文件", "*.*")],
+            parent=self.UIObject['root']
+        )
+        if file_path:
+            try:
+                export_data = OlivaDiceCore.console.dictBackupConfig.get('unity', {})
+                with open(file_path, 'w', encoding='utf-8') as f:
+                    json.dump(export_data, f, ensure_ascii=False, indent=4)
+                messagebox.showinfo("完成", "备份配置导出成功", parent=self.UIObject['root'])
+            except Exception as e:
+                messagebox.showerror("错误", f"导出失败: {str(e)}", parent=self.UIObject['root'])
+
+    def refresh_backup_config(self):
+        """刷新备份配置"""
+        if messagebox.askyesno(
+            "确认刷新",
+            "确定要从文件重新加载备份配置吗？这将覆盖当前所有修改。",
+            parent=self.UIObject['root']
+        ):
+            backup_data = OlivaDiceCore.console.dictBackupConfig.get('unity', {}).copy()
+            try:
+                self.load_backup_config()  # load_backup_config 方法内部已经包含了验证逻辑
+                self.init_data_total()
+                messagebox.showinfo("完成", "备份配置刷新成功", parent=self.UIObject['root'])
+            except Exception as e:
+                OlivaDiceCore.console.dictBackupConfig['unity'] = backup_data
+                messagebox.showerror("错误", f"刷新失败: {str(e)}\n配置未更改", parent=self.UIObject['root'])
+
+    def reset_backup_confirm(self):
+        """确认重置备份配置"""
+        if messagebox.askyesno(
+            "确认重置",
+            "确定要恢复所有备份配置为默认值吗？这将重置所有自定义配置。",
+            parent=self.UIObject['root']
+        ):
+            try:
+                # 获取默认值并重置配置
+                defaults = self.get_backup_config_defaults()
+                if 'unity' not in OlivaDiceCore.console.dictBackupConfig:
+                    OlivaDiceCore.console.dictBackupConfig['unity'] = {}
+                
+                # 设置为默认值而不是清空
+                OlivaDiceCore.console.dictBackupConfig['unity'] = defaults.copy()
+                
+                self.save_backup_config()
+                self.init_data_total()
+                messagebox.showinfo("完成", "已恢复所有备份配置为默认值", parent=self.UIObject['root'])
+            except Exception as e:
+                messagebox.showerror("错误", f"重置失败: {str(e)}", parent=self.UIObject['root'])
+
+    def tree_backup_rightKey(self, event):
+        """备份配置树右键菜单"""
+        try:
+            self.UIObject['tree_rightkey_menu_backup'].delete(0, tkinter.END)
+            self.UIObject['tree_rightkey_menu_backup'].add_command(label = '编辑', command = lambda : self.tree_backup_edit())
+            self.UIObject['tree_rightkey_menu_backup'].add_command(label='恢复/删除', command=lambda: self.reset_selected_backup())
+            self.UIObject['tree_rightkey_menu_backup'].post(event.x_root, event.y_root)
+        except:
+            pass
+
+    def tree_backup_edit(self):
+        """编辑备份配置"""
+        tmp_selection = None
+        for item in self.UIObject['tree_backup'].selection():
+            tmp_selection = self.UIObject['tree_backup'].item(item, "values")
+        if tmp_selection != None and len(tmp_selection) >= 1:
+            tmp_key = tmp_selection[0]
+            if 'unity' in OlivaDiceCore.console.dictBackupConfig:
+                if tmp_key in OlivaDiceCore.console.dictBackupConfig['unity']:
+                    tmp_value = OlivaDiceCore.console.dictBackupConfig['unity'][tmp_key]
+                    tmp_edit_backup_UI_obj = self.edit_backup_UI(
+                        root_class = self,
+                        key = tmp_key,
+                        value = tmp_value
+                    )
+                else:
+                    messagebox.showwarning("警告", "未找到对应的备份配置项", parent=self.UIObject['root'])
+            else:
+                messagebox.showwarning("警告", "未找到备份配置", parent=self.UIObject['root'])
+        else:
+            messagebox.showwarning("警告", "请先选择要编辑的备份配置项", parent=self.UIObject['root'])
+
+    def reset_selected_backup(self):
+        """恢复选中的备份配置项为默认值"""
+        tmp_selection = None
+        for item in self.UIObject['tree_backup'].selection():
+            tmp_selection = self.UIObject['tree_backup'].item(item, "values")
+        if tmp_selection != None and len(tmp_selection) >= 1:
+            tmp_key = tmp_selection[0]
+            
+            # 获取默认值
+            defaults = self.get_backup_config_defaults()
+            
+            if tmp_key in defaults:
+                default_value = defaults[tmp_key]
+                if messagebox.askyesno(
+                    "确认恢复",
+                    f"确定要恢复备份配置项 '{tmp_key}' 为默认值 '{default_value}' 吗？",
+                    parent=self.UIObject['root']
+                ):
+                    try:
+                        if 'unity' not in OlivaDiceCore.console.dictBackupConfig:
+                            OlivaDiceCore.console.dictBackupConfig['unity'] = {}
+                        
+                        OlivaDiceCore.console.dictBackupConfig['unity'][tmp_key] = default_value
+                        self.save_backup_config()
+                        self.init_data_total()
+                        messagebox.showinfo("完成", f"已恢复备份配置项 '{tmp_key}' 为默认值", parent=self.UIObject['root'])
+                    except Exception as e:
+                        messagebox.showerror("错误", f"恢复失败: {str(e)}", parent=self.UIObject['root'])
+            else:
+                # 非必需配置项，提供删除选项
+                if messagebox.askyesno(
+                    "确认删除",
+                    f"配置项 '{tmp_key}' 不是必需项，确定要删除吗？",
+                    parent=self.UIObject['root']
+                ):
+                    try:
+                        if 'unity' in OlivaDiceCore.console.dictBackupConfig:
+                            if tmp_key in OlivaDiceCore.console.dictBackupConfig['unity']:
+                                del OlivaDiceCore.console.dictBackupConfig['unity'][tmp_key]
+                                self.save_backup_config()
+                                self.init_data_total()
+                                messagebox.showinfo("完成", f"已删除备份配置项 '{tmp_key}'", parent=self.UIObject['root'])
+                            else:
+                                messagebox.showwarning("警告", "未找到对应的备份配置项", parent=self.UIObject['root'])
+                        else:
+                            messagebox.showwarning("警告", "未找到备份配置", parent=self.UIObject['root'])
+                    except Exception as e:
+                        messagebox.showerror("错误", f"删除失败: {str(e)}", parent=self.UIObject['root'])
+        else:
+            messagebox.showwarning("警告", "请先选择要操作的备份配置项", parent=self.UIObject['root'])
     
     def default_reply_config(self):
         '''导入所有的dictStrCustom'''

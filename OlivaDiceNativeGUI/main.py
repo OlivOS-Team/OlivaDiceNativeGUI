@@ -32,6 +32,12 @@ class Event(object):
         OlivaDiceCore.crossHook.dictHookList['model'].append(['OlivaDiceNativeGUI', OlivaDiceNativeGUI.data.OlivaDiceNativeGUI_ver_short])
         OlivaDiceNativeGUI.load.listPlugin = Proc.get_plugin_list()
         OlivaDiceNativeGUI.load.dictBotInfo = Proc.Proc_data['bot_info_dict']
+        
+        # 检查是否存在 OlivaDiceMaster 模块
+        OlivaDiceNativeGUI.load.backupFlag = False
+        plugin_list = Proc.get_plugin_list()
+        if 'OlivaDiceMaster' in plugin_list:
+            OlivaDiceNativeGUI.load.backupFlag = True
 
         threading.Thread(
             target = OlivaDiceNativeGUI.load.checkOnlineStatusLoop,
