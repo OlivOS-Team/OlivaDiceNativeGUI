@@ -220,6 +220,8 @@ dictStrCustomNote = {
     'strPcSkillEnhanceNotFound': '【.en】指令\n未找到技能',
     'strPcSkillEnhanceOnlySpecial': '【.en】指令\n0值/特殊技能/未找到技能单独回复',
     'strPcSkillEnhanceError' : '【.en】指令\n技能成长错误',
+    'strHiyResult' : '【.hiy】指令\n回复结果',
+    'strHiyPcNotFound' : '【.hiy】指令\n未找到人物卡',
     'strSanCheck' : '【.sc】指令\n理智检定',
     'strSanCheckGreatFailed' : '【.sc】指令\n理智检定大失败',
     'strSanCheckError' : '【.sc】指令\n理智检定错误',
