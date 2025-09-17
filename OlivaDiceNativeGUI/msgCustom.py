@@ -364,6 +364,7 @@ dictStrCustomNote = {
     'strMasterBackupStart': '【.backup start】指令\n开始数据备份',
     'strMasterBackupSuccess': '【.backup start】指令\n数据备份成功',
     'strMasterBackupFailed': '【.backup start】指令\n数据备份失败',
+    'strMasterBackupConfigSetFailed': '【.backup change】指令\n修改配置项失败',
     'strMasterBackupConfigSet': '【.backup change】指令\n修改配置项',
     'strMasterBackupChangeUsage': '【.backup change】指令\n配置项列表',
     'strMasterBackupConfigGet': '【.backup】指令\n查看配置项',
