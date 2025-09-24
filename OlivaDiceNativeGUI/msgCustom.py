@@ -431,7 +431,7 @@ dictConsoleSwitchNote = {
     'odysseyRulesItemLimit' : '规则速查单页显示条目数量上限',
     'odysseyKOOKBotMarketPulseEnable' : '是否启用KOOK机器人服务平台心跳对接, 默认关闭\n 0 关闭\n 1 开启',
     'odysseyKOOKPlayGameMode': '在玩游戏/听音乐模式\n 0 关闭\n 1 正在玩 青果核心OlivaDice\n 2 正在听音乐 歌名、歌手可用对应str设置\n 3 正在玩游戏 游戏ID可用对应str设置',
-    'odysseyKOOKPlayGameMusicSoftware': '在玩听音乐的平台, 默认网易云\n 0 网易云\n 1 QQ音乐\n 2 酷狗音乐'
+    'odysseyKOOKPlayGameMusicSoftware': '在玩听音乐的平台, 默认网易云\n 0 网易云\n 1 QQ音乐\n 2 酷狗音乐',
 }
 
 dictBackupConfigNote = {
@@ -439,5 +439,5 @@ dictBackupConfigNote = {
     'startDate': '备份起始日期\n格式：yyyy-MM-dd\n例如：2025-09-01',
     'passDay': '从备份开始日期为起始，每隔多少天备份一次\n数值类型，单位为天\n例如：1',
     'backupTime': '进行备份的时间点\n格式：HH:mm:ss\n例如：04:00:00',
-    'maxBackupCount': '最大备份数量\n数值类型，必须大于0\n例如：1'
+    'maxBackupCount': '最大备份数量\n数值类型，必须大于0\n例如：1',
 }
