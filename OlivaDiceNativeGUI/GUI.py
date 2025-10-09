@@ -3172,7 +3172,7 @@ class ConfigUI(object):
         if tmp_selection != None and len(tmp_selection) >= 1:
             tmp_key = tmp_selection[0]
             
-            # 获取默认值
+            # 获取默认值 
             defaults = self.get_backup_config_defaults()
             
             if tmp_key in defaults:
