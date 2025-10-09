@@ -175,6 +175,7 @@ dictStrCustomNote = {
     'strPcInitSt' : '【.st init】指令\n人物卡作成',
     'strPcSet' : '【.st set】指令\n切换人物卡',
     'strPcSetError' : '【.st set】指令\n切换人物卡错误\n人物卡不存在',
+    'strPcSetRecommend' : '【.st set】指令\n模糊搜索人物卡推荐列表',
     'strPcNew' : '【.st new】指令\n新建人物卡',
     'strPcNewAtOther' : '【.st new】代骰指令\n帮他人新建人物卡',
     'strPcNewError' : '【.st new】指令\n新建人物卡发生错误',
@@ -279,6 +280,7 @@ dictStrCustomNote = {
     'strTeamCleared': '【.team clear】指令\n清空小队成员',
     'strTeamAt': '【.team at】指令\n通知小队成员',
     'strTeamSetActive': '【.team set】指令\n设置活跃小队',
+    'strTeamSetRecommend': '【.team set】指令\n模糊搜索小队推荐列表',
     'strTeamSortResult': '【.team sort】指令\n按照技能排序小队成员',
     'strTeamSortNeedSkill': '【.team sort】指令\n无技能名',
     'strTeamRenamed': '【.team rename】指令\n小队重命名成功',
@@ -346,6 +348,7 @@ dictStrCustomNote = {
     'strLoggerLogQuoteAlreadyOn' : "【.log quote】指令\n自动引用上次结束日志功能已开启",
     'strLoggerLogQuoteOff' : "【.log quote】指令\n关闭自动引用上次结束日志功能",
     'strLoggerLogQuoteAlreadyOff' : "【.log quote】指令\n自动引用上次结束日志功能已关闭",
+    'strLoggerLogSetRecommend': '【.log set】指令\n模糊搜索日志推荐列表',
 
     # OlivaDiceMaster
     'strMasterReply': '',
