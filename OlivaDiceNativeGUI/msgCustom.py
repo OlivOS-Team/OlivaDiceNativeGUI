@@ -175,6 +175,7 @@ dictStrCustomNote = {
     'strPcInitSt' : '【.st init】指令\n人物卡作成',
     'strPcSet' : '【.st set】指令\n切换人物卡',
     'strPcSetError' : '【.st set】指令\n切换人物卡错误\n人物卡不存在',
+    'strPcSetRecommend' : '【.st set】指令\n模糊搜索人物卡推荐列表',
     'strPcNew' : '【.st new】指令\n新建人物卡',
     'strPcNewAtOther' : '【.st new】代骰指令\n帮他人新建人物卡',
     'strPcNewError' : '【.st new】指令\n新建人物卡发生错误',
@@ -279,6 +280,7 @@ dictStrCustomNote = {
     'strTeamCleared': '【.team clear】指令\n清空小队成员',
     'strTeamAt': '【.team at】指令\n通知小队成员',
     'strTeamSetActive': '【.team set】指令\n设置活跃小队',
+    'strTeamSetRecommend': '【.team set】指令\n模糊搜索小队推荐列表',
     'strTeamSortResult': '【.team sort】指令\n按照技能排序小队成员',
     'strTeamSortNeedSkill': '【.team sort】指令\n无技能名',
     'strTeamRenamed': '【.team rename】指令\n小队重命名成功',
@@ -308,6 +310,7 @@ dictStrCustomNote = {
     'strJoyJrrp': '【.jrrp】指令\n今日人品',
     'strJoyZrrp': '【.zrrp】指令\n昨日人品',
     'strJoyMrrp': '【.mrrp】指令\n明日人品',
+    'strJoyPokeCustom': '戳一戳自定义回复\n使用“|”来分割多个回复',
 
     # OlivaDiceLogger
     'strLoggerLogOn': '【.log on】指令\n开始日志记录',
@@ -345,6 +348,7 @@ dictStrCustomNote = {
     'strLoggerLogQuoteAlreadyOn' : "【.log quote】指令\n自动引用上次结束日志功能已开启",
     'strLoggerLogQuoteOff' : "【.log quote】指令\n关闭自动引用上次结束日志功能",
     'strLoggerLogQuoteAlreadyOff' : "【.log quote】指令\n自动引用上次结束日志功能已关闭",
+    'strLoggerLogSetRecommend': '【.log set】指令\n模糊搜索日志推荐列表',
 
     # OlivaDiceMaster
     'strMasterReply': '',
@@ -424,7 +428,7 @@ dictConsoleSwitchNote = {
     'helpRecommendGate' : '帮助文档模糊搜索条目长度上限\n只有小于这个上限的条目可以被推荐\n默认为 25',
     'censorMode' : '敏感词审查模式\n 0 敏感词审查\n 1 启用敏感词审查（默认）',
     'censorMatchMode' : '敏感词审查匹配模式\n 0 短词条优先\n 1 长词条优先（默认）',
-    'joyPokeMode' : '戳一戳回复模式\n 0 返回默认版本号\n 1 进行一次默认骰掷骰\n 2 进行一次今日人品查询\n 3 关闭回复',
+    'joyPokeMode' : '戳一戳回复模式\n 0 返回默认版本号\n 1 进行一次默认骰掷骰\n 2 进行一次今日人品查询\n 3 使用自定义回复\n 4 关闭回复',
     'joyEnableCCPK' : '是否对回复词启用程心自定义解析\n 0 默认原版\n 1 开启程心自定义解析',
     'differentJrrpMode' : '是否启用不同用户在不同的 Bot 中今日人品结果不同，默认关闭\n 0 关闭\n 1 开启',
     'masterAutoUpdate' : '是否进行自动更新\n 0 关闭自动更新\n 1 开启自动更新',
