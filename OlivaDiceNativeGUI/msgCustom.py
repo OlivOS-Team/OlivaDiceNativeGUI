@@ -125,6 +125,8 @@ dictStrCustomNote = {
     'strDelGroupTempRule' : '【.set(coc/dnd/temp/rule)】等指令\n清除群规则模板',
     'strSetGroupTempError' : '【.set(temp/rule)】等指令\n对应的模板不存在',
     'strSetGroupTempRuleError' : '【.set(temp/rule)】等指令\n对应的模板规则不存在',
+    'strSetGroupRavRule' : '【.setrav】指令\n设置rav规则',
+    'strDelGroupRavRule' : '【.setrav】指令\n清除rav规则',
     'strSetGroupMainDice' : '【.set】指令\n设置群内主骰',
     'strShowGroupMainDice' : '【.set】指令\n显示群内主骰',
     'strShowGroupMainDiceNone' : '【.set】指令\n群内未设置主骰',
