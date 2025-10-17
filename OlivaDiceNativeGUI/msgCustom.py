@@ -323,6 +323,7 @@ dictStrCustomNote = {
     'strLoggerLogAlreadyOff': '【.log off/temp/rename】指令\n当前没有正在进行的日志记录',
     'strLoggerLogEnd': '【.log end】指令\n停止日志记录',
     'strLoggerLogAlreadyEnd': '【.log end】指令\n当前没有日志记录',
+    'strLoggerLogEndingInProgress': '【.log】指令\n正在保存日志记录',
     'strLoggerLogSave': '【.log end】指令\n日志已保存',
     'strLoggerLogUrl': '【.log end】指令\n日志已上传',
     'strLoggerLogList': '【.log list】指令\n查询本群日志',
