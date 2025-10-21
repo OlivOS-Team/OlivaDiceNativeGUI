@@ -170,7 +170,7 @@ dictStrCustomNote = {
     'strDefaultShowOff': '默认值技能显示模式关闭时的技能标记说明',
     'strDefaultShowOn': '默认值技能显示模式开启时的技能标记说明',
     'strPcList' : '【.st list】指令\n查看人物卡列表',
-    'strPclistNone' : '【.st list】指令\n人物卡列表为空',
+    'strPcListNone' : '【.st list】指令\n人物卡列表为空',
     'strPcLock' : '【.st lock】指令\n锁定人物卡',
     'strPcLockError' : '【.st lock】指令\n锁定人物卡失败',
     'strPcLockNone' : '【.st lock】指令\n没有人物卡时尝试锁定人物卡',
