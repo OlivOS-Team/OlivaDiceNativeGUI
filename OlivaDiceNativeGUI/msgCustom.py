@@ -163,6 +163,7 @@ dictStrCustomNote = {
     'strPcShow' : '【.st show】指令\n查看人物卡',
     'strPcShowAtOther' : '【.st show】代骰指令\n代他人查看人物卡',
     'strPcShowNone' : '【.st show】指令\n没有人物卡时查看人物卡',
+    'strPcShowNoneAtOther' : '【.st show】代骰指令\n指定用户没有人物卡时查看人物卡',
     'strShowDefaultOn': '【.st defaultshow】指令\n开启默认值技能显示模式',
     'strShowDefaultAlreadyOn': '【.st defaultshow】指令\n默认值技能显示模式已处于开启状态',
     'strShowDefaultOff': '【.st defaultshow】指令\n关闭默认值技能显示模式',
