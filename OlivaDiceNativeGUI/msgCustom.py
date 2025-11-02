@@ -377,7 +377,7 @@ dictStrCustomNote = {
     'strLoggerStatUserSeparator': '【.log stat all】指令\n用户之间的分隔符',
 
     # OlivaDiceMaster
-    'strMasterReply': '',
+    'strMasterReply': '模块列表显示',
     'strMasterOopmApiFailed': '【.oopm】指令\n更新源访问失败',
     'strMasterOopmNotMatch': '【.oopm】指令\n未找到匹配的条目',
     'strMasterOopmDownload': '【.oopm】指令\n模块已下载成功',
