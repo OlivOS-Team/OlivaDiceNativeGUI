@@ -368,6 +368,7 @@ dictStrCustomNote = {
     'strLoggerLogStatEmpty': '【.log stat】指令\n统计数据为空',
     'strLoggerStatSuccessFormat': '【.log stat】指令\n成功检定单项格式',
     'strLoggerStatFailFormat': '【.log stat】指令\n失败检定单项格式',
+    'strLoggerStatEmptyText': '【.log stat】指令\n统计数据为空时显示的文本',
     'strLoggerStatPcCardFormat': '【.log stat】指令\n人物卡块格式',
     'strLoggerStatSuccessLabel': '【.log stat】指令\n成功列表标签格式',
     'strLoggerStatFailLabel': '【.log stat】指令\n失败列表标签格式',
