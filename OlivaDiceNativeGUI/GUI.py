@@ -1291,7 +1291,7 @@ class ConfigUI(object):
         self.UIObject['menu_account_context'].add_command(label = '断开主从关系', command = self.unlink_account_from_menu)
         self.UIObject['tree_account'].bind('<Button-3>', self.show_account_context_menu)
         
-        # 绑定选择变化事件，更新当前从账号显示
+        # 绑定选择变化事件
         self.UIObject['tree_account'].bind('<<TreeviewSelect>>', self.update_current_slave_display)
 
         # 底部按钮区域
