@@ -18,7 +18,10 @@ import OlivOS
 import OlivaDiceNativeGUI
 import OlivaDiceCore
 import OlivaDiceOdyssey
-
+try:
+    import OlivaDiceMaster
+except:
+    pass
 import base64
 import os
 import tkinter
@@ -28,6 +31,7 @@ import traceback
 import threading
 import json
 import importlib
+import re
 
 from PIL import Image
 from PIL import ImageTk
@@ -137,8 +141,12 @@ class ConfigUI(object):
         self.init_frame_console()
 
         # 备份
-        if OlivaDiceNativeGUI.load.backupFlag:
+        if OlivaDiceNativeGUI.load.masterModelFlag:
             self.init_frame_backup()
+
+        # 账号管理
+        if OlivaDiceNativeGUI.load.masterModelFlag:
+            self.init_frame_account()
 
         # 骰主列表
         self.init_frame_master()
@@ -153,13 +161,17 @@ class ConfigUI(object):
         self.UIObject['Notebook_root'].add(self.UIObject['frame_console_root'], text="配置项")
         
         # 只有在有 OlivaDiceMaster 模块时才显示备份选项卡
-        if OlivaDiceNativeGUI.load.backupFlag:
+        if OlivaDiceNativeGUI.load.masterModelFlag:
             self.UIObject['Notebook_root'].add(self.UIObject['frame_backup_root'], text="备份")
+        
+        # 只有在有 OlivaDiceMaster 模块时才显示账号管理选项卡
+        if OlivaDiceNativeGUI.load.masterModelFlag:
+            self.UIObject['Notebook_root'].add(self.UIObject['frame_account_root'], text="账号管理")
         
         self.UIObject['Notebook_root'].add(self.UIObject['frame_master_root'], text="骰主列表")
 
         # 只有在有 OlivaDiceMaster 模块时才加载备份配置
-        if OlivaDiceNativeGUI.load.backupFlag:
+        if OlivaDiceNativeGUI.load.masterModelFlag:
             try:
                 self.load_backup_config()
             except Exception as e:
@@ -1109,6 +1121,993 @@ class ConfigUI(object):
         self.UIObject['buttom_reset_delete_backup'].bind('<Enter>', lambda x : self.buttom_action('buttom_reset_delete_backup', '<Enter>'))
         self.UIObject['buttom_reset_delete_backup'].bind('<Leave>', lambda x : self.buttom_action('buttom_reset_delete_backup', '<Leave>'))
         self.UIObject['buttom_reset_delete_backup'].pack(side = tkinter.RIGHT, padx = (0, 5))
+
+    def init_frame_account(self):
+        """账号管理界面"""
+        self.UIObject['frame_account_root'] = tkinter.Frame(self.UIObject['Notebook_root'])
+        self.UIObject['frame_account_root'].configure(relief = tkinter.FLAT)
+        self.UIObject['frame_account_root'].grid(
+            row = 1,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (0, 0),
+            pady = (0, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+        self.UIObject['frame_account_root'].grid_rowconfigure(0, weight = 0)
+        self.UIObject['frame_account_root'].grid_rowconfigure(1, weight = 0)
+        self.UIObject['frame_account_root'].grid_rowconfigure(2, weight = 15)
+        self.UIObject['frame_account_root'].grid_rowconfigure(3, weight = 0)
+        self.UIObject['frame_account_root'].grid_columnconfigure(0, weight = 15)
+        self.UIObject['frame_account_root'].configure(bg = self.UIConfig['color_001'], borderwidth = 0)
+
+        # 说明标签
+        self.UIObject['label_account_info'] = tkinter.Label(
+            self.UIObject['frame_account_root'],
+            text = '多账号连接管理：建立主从关系后，从账号会自动共享主账号的数据\n部分数据（如群开关状态）保持独立，不会被共享',
+            font = ('等线', 10),
+            bg = self.UIConfig['color_001'],
+            fg = self.UIConfig['color_004'],
+            justify = 'left',
+            anchor = 'w'
+        )
+        self.UIObject['label_account_info'].grid(
+            row = 0,
+            column = 0,
+            sticky = "nsew",
+            padx = (15, 15),
+            pady = (15, 5)
+        )
+
+        # 主从关系配置区域
+        self.UIObject['frame_account_relation'] = tkinter.Frame(self.UIObject['frame_account_root'])
+        self.UIObject['frame_account_relation'].configure(bg = self.UIConfig['color_001'])
+        self.UIObject['frame_account_relation'].grid(
+            row = 1,
+            column = 0,
+            sticky = "nsew",
+            padx = (15, 15),
+            pady = (5, 5)
+        )
+
+        # 主账号
+        self.UIObject['label_master_account'] = tkinter.Label(
+            self.UIObject['frame_account_relation'],
+            text = '主账号:',
+            font = ('等线', 10),
+            bg = self.UIConfig['color_001'],
+            fg = self.UIConfig['color_004']
+        )
+        self.UIObject['label_master_account'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        self.UIData['account_master_StringVar'] = tkinter.StringVar()
+        self.UIObject['combo_master_account'] = ttk.Combobox(
+            self.UIObject['frame_account_relation'],
+            textvariable = self.UIData['account_master_StringVar'],
+            width = 20
+        )
+        self.UIObject['combo_master_account'].configure(state='readonly')
+        self.UIObject['combo_master_account'].pack(side = tkinter.LEFT, padx = (0, 15))
+        
+        # 当前选中的从账号显示
+        self.UIObject['label_current_slave'] = tkinter.Label(
+            self.UIObject['frame_account_relation'],
+            text = '当前从账号: 未选择',
+            font = ('等线', 10),
+            bg = self.UIConfig['color_001'],
+            fg = self.UIConfig['color_006']
+        )
+        self.UIObject['label_current_slave'].pack(side = tkinter.LEFT, padx = (0, 15))
+
+        # 建立连接按钮
+        self.UIObject['button_link_account'] = tkinter.Button(
+            self.UIObject['frame_account_relation'],
+            text = '建立主从关系',
+            command = lambda : self.link_account(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 1,
+            width = 12
+        )
+        self.UIObject['button_link_account'].bind('<Enter>', lambda x : self.buttom_action('button_link_account', '<Enter>'))
+        self.UIObject['button_link_account'].bind('<Leave>', lambda x : self.buttom_action('button_link_account', '<Leave>'))
+        self.UIObject['button_link_account'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        # 断开连接按钮
+        self.UIObject['button_unlink_account'] = tkinter.Button(
+            self.UIObject['frame_account_relation'],
+            text = '断开主从关系',
+            command = lambda : self.unlink_account(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 1,
+            width = 12
+        )
+        self.UIObject['button_unlink_account'].bind('<Enter>', lambda x : self.buttom_action('button_unlink_account', '<Enter>'))
+        self.UIObject['button_unlink_account'].bind('<Leave>', lambda x : self.buttom_action('button_unlink_account', '<Leave>'))
+        self.UIObject['button_unlink_account'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        # 账号列表区域
+        self.UIObject['tree_account'] = ttk.Treeview(self.UIObject['frame_account_root'])
+        self.UIObject['tree_account']['show'] = 'headings'
+        self.UIObject['tree_account']['columns'] = ('ROLE', 'NAME', 'ID', 'HASH', 'RELATION')
+        self.UIObject['tree_account'].column('ROLE', width = 80)
+        self.UIObject['tree_account'].column('NAME', width = 150)
+        self.UIObject['tree_account'].column('ID', width = 120)
+        self.UIObject['tree_account'].column('HASH', width = 200)
+        self.UIObject['tree_account'].column('RELATION', width = 200)
+        self.UIObject['tree_account'].heading('ROLE', text = '角色')
+        self.UIObject['tree_account'].heading('NAME', text = '名称')
+        self.UIObject['tree_account'].heading('ID', text = 'ID')
+        self.UIObject['tree_account'].heading('HASH', text = 'Hash')
+        self.UIObject['tree_account'].heading('RELATION', text = '主从关系')
+        self.UIObject['tree_account'].grid(
+            row = 2,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (15, 0),
+            pady = (5, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+        self.UIObject['tree_account_yscroll'] = ttk.Scrollbar(
+            self.UIObject['frame_account_root'],
+            orient = "vertical",
+            command = self.UIObject['tree_account'].yview
+        )
+        self.UIObject['tree_account'].configure(
+            yscrollcommand = self.UIObject['tree_account_yscroll'].set
+        )
+        self.UIObject['tree_account_yscroll'].grid(
+            row = 2,
+            column = 1,
+            sticky = "nsw",
+            rowspan = 1,
+            columnspan = 1,
+            padx = (0, 15),
+            pady = (5, 0),
+            ipadx = 0,
+            ipady = 0
+        )
+        
+        # 添加右键菜单
+        self.UIObject['menu_account_context'] = tkinter.Menu(self.UIObject['root'], tearoff = 0)
+        self.UIObject['menu_account_context'].add_command(label = '复制 Hash', command = self.copy_account_hash)
+        self.UIObject['menu_account_context'].add_separator()
+        self.UIObject['menu_account_context'].add_command(label = '建立主从关系', command = self.link_account_from_menu)
+        self.UIObject['menu_account_context'].add_command(label = '断开主从关系', command = self.unlink_account_from_menu)
+        self.UIObject['tree_account'].bind('<Button-3>', self.show_account_context_menu)
+        
+        # 绑定选择变化事件，更新当前从账号显示
+        self.UIObject['tree_account'].bind('<<TreeviewSelect>>', self.update_current_slave_display)
+
+        # 底部按钮区域
+        self.UIObject['button_frame_account'] = tkinter.Frame(self.UIObject['frame_account_root'])
+        self.UIObject['button_frame_account'].configure(bg = self.UIConfig['color_001'])
+        self.UIObject['button_frame_account'].grid(
+            row = 3,
+            column = 0,
+            sticky = "nsew",
+            rowspan = 1,
+            columnspan = 2,
+            padx = (15, 15),
+            pady = (8, 15)
+        )
+
+        # 刷新按钮
+        self.UIObject['button_refresh_account'] = tkinter.Button(
+            self.UIObject['button_frame_account'],
+            text = '刷新账号列表',
+            command = lambda : self.refresh_account_list(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 12
+        )
+        self.UIObject['button_refresh_account'].bind('<Enter>', lambda x : self.buttom_action('button_refresh_account', '<Enter>'))
+        self.UIObject['button_refresh_account'].bind('<Leave>', lambda x : self.buttom_action('button_refresh_account', '<Leave>'))
+        self.UIObject['button_refresh_account'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        # 复制到账号按钮
+        self.UIObject['button_copy_to_account'] = tkinter.Button(
+            self.UIObject['button_frame_account'],
+            text = '复制到目标账号',
+            command = lambda : self.copy_to_account(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 14
+        )
+        self.UIObject['button_copy_to_account'].bind('<Enter>', lambda x : self.buttom_action('button_copy_to_account', '<Enter>'))
+        self.UIObject['button_copy_to_account'].bind('<Leave>', lambda x : self.buttom_action('button_copy_to_account', '<Leave>'))
+        self.UIObject['button_copy_to_account'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        # 导出到压缩包按钮
+        self.UIObject['button_export_to_zip'] = tkinter.Button(
+            self.UIObject['button_frame_account'],
+            text = '导出到压缩包',
+            command = lambda : self.export_to_zip(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 14
+        )
+        self.UIObject['button_export_to_zip'].bind('<Enter>', lambda x : self.buttom_action('button_export_to_zip', '<Enter>'))
+        self.UIObject['button_export_to_zip'].bind('<Leave>', lambda x : self.buttom_action('button_export_to_zip', '<Leave>'))
+        self.UIObject['button_export_to_zip'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        # 从压缩包导入按钮
+        self.UIObject['button_import_from_zip'] = tkinter.Button(
+            self.UIObject['button_frame_account'],
+            text = '从压缩包导入',
+            command = lambda : self.import_from_zip(),
+            bd = 0,
+            activebackground = self.UIConfig['color_002'],
+            activeforeground = self.UIConfig['color_001'],
+            bg = self.UIConfig['color_003'],
+            fg = self.UIConfig['color_004'],
+            relief = 'groove',
+            height = 2,
+            width = 14
+        )
+        self.UIObject['button_import_from_zip'].bind('<Enter>', lambda x : self.buttom_action('button_import_from_zip', '<Enter>'))
+        self.UIObject['button_import_from_zip'].bind('<Leave>', lambda x : self.buttom_action('button_import_from_zip', '<Leave>'))
+        self.UIObject['button_import_from_zip'].pack(side = tkinter.LEFT, padx = (0, 5))
+
+        # 初始化账号列表
+        self.refresh_account_list()
+
+    def update_current_slave_display(self, event=None):
+        """更新当前选中的从账号显示"""
+        try:
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                self.UIObject['label_current_slave'].config(text='当前从账号: 未选择')
+                return
+            
+            item = self.UIObject['tree_account'].item(selection[0])
+            values = item['values']
+            bot_name = values[1]  # 名称
+            bot_id = values[2]    # ID
+            bot_hash = values[3]  # Hash
+            
+            # 格式化显示
+            if bot_id == "-":
+                # 未找到的从账号
+                display_text = f"当前从账号: {bot_name} ({bot_hash[:8]}...)"
+            else:
+                display_text = f"当前从账号: {bot_name} ({bot_id})"
+            
+            self.UIObject['label_current_slave'].config(text=display_text)
+        except Exception as e:
+            self.UIObject['label_current_slave'].config(text='当前从账号: 未选择')
+    
+    def link_account(self):
+        """建立主从关系"""
+        try:
+            # 从Treeview中获取选中的账号作为从账号
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                messagebox.showwarning("警告", "请先在账号列表中选择从账号")
+                return
+            
+            item = self.UIObject['tree_account'].item(selection[0])
+            values = item['values']
+            slave_hash = values[3]  # Hash在第4列
+            
+            # 获取主账号
+            master_key = self.UIData['account_master_StringVar'].get()
+            
+            if not master_key or master_key == '请选择账号':
+                messagebox.showwarning("警告", "请选择主账号")
+                return
+            
+            master_hash = self.UIData['account_hash_map'][master_key]
+            
+            if slave_hash == master_hash:
+                messagebox.showerror("错误", "从账号和主账号不能相同")
+                return
+            
+            # 检查账号不能为unity（大小写模糊）
+            if slave_hash.lower() == "unity":
+                messagebox.showerror("错误", "从账号不能为unity")
+                return
+            if master_hash.lower() == "unity":
+                messagebox.showerror("错误", "主账号不能为unity")
+                return
+            
+            # 调用账号管理模块
+            success, result = OlivaDiceMaster.accountManager.linkAccount(slave_hash, master_hash)
+            
+            if success:
+                # 保存当前主账号选择
+                current_master = self.UIData['account_master_StringVar'].get()
+                
+                messagebox.showinfo("成功", result)
+                # 刷新列表（会自动清除选择并更新显示）
+                self.refresh_account_list()
+                
+                # 恢复主账号选择
+                if current_master and current_master != '请选择账号':
+                    try:
+                        values = self.UIObject['combo_master_account']['values']
+                        if current_master in values:
+                            index = list(values).index(current_master)
+                            self.UIObject['combo_master_account'].current(index)
+                    except:
+                        pass
+            else:
+                messagebox.showerror("失败", result)
+        except Exception as e:
+            messagebox.showerror("错误", f"建立主从关系失败：{str(e)}")
+
+    def unlink_account(self):
+        """断开主从关系"""
+        try:
+            # 从Treeview中获取选中的账号作为从账号
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                messagebox.showwarning("警告", "请先在账号列表中选择要断开的从账号")
+                return
+            
+            item = self.UIObject['tree_account'].item(selection[0])
+            values = item['values']
+            slave_hash = values[3]  # Hash在第4列
+            bot_name = values[1]    # 名称
+            bot_id = values[2]      # ID
+            
+            # 格式化显示名称用于确认对话框
+            if bot_id == "-":
+                display_name = f"{bot_name} ({slave_hash[:8]}...)"
+            else:
+                display_name = f"{bot_name} ({bot_id})"
+            
+            # 确认对话框
+            if not messagebox.askyesno("确认", f"确定要断开账号 {display_name} 的主从关系吗？"):
+                return
+            
+            # 调用账号管理模块
+            success, result = OlivaDiceMaster.accountManager.unlinkAccount(slave_hash)
+            
+            if success:
+                # 保存当前主账号选择
+                current_master = self.UIData['account_master_StringVar'].get()
+                
+                messagebox.showinfo("成功", result)
+                # 刷新列表（会自动清除选择并更新显示）
+                self.refresh_account_list()
+                
+                # 恢复主账号选择
+                if current_master and current_master != '请选择账号':
+                    try:
+                        values = self.UIObject['combo_master_account']['values']
+                        if current_master in values:
+                            index = list(values).index(current_master)
+                            self.UIObject['combo_master_account'].current(index)
+                    except:
+                        pass
+            else:
+                messagebox.showerror("失败", result)
+        except Exception as e:
+            messagebox.showerror("错误", f"断开主从关系失败：{str(e)}")
+
+    def get_bot_display_name(self, botHash, bot_info):
+        """获取bot的显示名称（类似骰主列表的实现）"""
+        bot_name = "未知"
+        
+        # 先尝试从 bot_info 获取
+        if hasattr(bot_info, 'name') and bot_info.name:
+            bot_name = bot_info.name
+        
+        # 尝试从用户配置中获取保存的昵称（如果bot曾经作为用户被记录过）
+        try:
+            if hasattr(bot_info, 'id') and hasattr(bot_info, 'platform') and bot_info.platform:
+                bot_id = str(bot_info.id)
+                bot_user_hash = OlivaDiceCore.userConfig.getUserHash(
+                    userId = bot_id,
+                    userType = 'user',
+                    platform = bot_info.platform['platform']
+                )
+                saved_name = OlivaDiceCore.userConfig.getUserConfigByKeyWithHash(
+                    userHash = bot_user_hash,
+                    userConfigKey = 'userName',
+                    botHash = botHash
+                )
+                if saved_name and saved_name != '用户':
+                    bot_name = saved_name
+        except:
+            pass
+        
+        return bot_name
+    
+    def show_account_context_menu(self, event):
+        """显示账号列表的右键菜单"""
+        try:
+            # 选择右键点击的项目
+            item = self.UIObject['tree_account'].identify_row(event.y)
+            if item:
+                self.UIObject['tree_account'].selection_set(item)
+                self.UIObject['tree_account'].focus(item)
+                self.UIObject['menu_account_context'].post(event.x_root, event.y_root)
+        except Exception as e:
+            pass
+    
+    def copy_account_hash(self):
+        """复制选中账号的Hash到剪贴板"""
+        try:
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                return
+            
+            item = self.UIObject['tree_account'].item(selection[0])
+            values = item['values']
+            bot_hash = values[3]  # Hash在第4列
+            
+            if bot_hash:
+                self.UIObject['root'].clipboard_clear()
+                self.UIObject['root'].clipboard_append(bot_hash)
+                self.UIObject['root'].update()
+                messagebox.showinfo("成功", f"已复制 Hash 到剪贴板：\n{bot_hash}")
+        except Exception as e:
+            messagebox.showerror("错误", f"复制失败：{str(e)}")
+    
+    def link_account_from_menu(self):
+        """从右键菜单建立主从关系（右键选中的账号作为从账号）"""
+        try:
+            # 确保有选中的账号
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                messagebox.showwarning("警告", "请先选择一个账号")
+                return
+            
+            # 直接调用现有的建立主从关系函数
+            self.link_account()
+        except Exception as e:
+            messagebox.showerror("错误", f"建立主从关系失败：{str(e)}")
+    
+    def unlink_account_from_menu(self):
+        """从右键菜单断开主从关系（右键选中的账号作为从账号）"""
+        try:
+            # 确保有选中的账号
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                messagebox.showwarning("警告", "请先选择一个账号")
+                return
+            
+            # 直接调用现有的断开主从关系函数
+            self.unlink_account()
+        except Exception as e:
+            messagebox.showerror("错误", f"断开主从关系失败：{str(e)}")
+
+    def refresh_account_list(self):
+        """刷新账号列表"""
+        try:
+            # 清空树形列表
+            for item in self.UIObject['tree_account'].get_children():
+                self.UIObject['tree_account'].delete(item)
+            
+            # 获取所有账号和关系
+            relations = OlivaDiceCore.console.getAllAccountRelations()
+            
+            # 创建主账号到从账号的映射
+            master_to_slaves = {}
+            for slave, master in relations.items():
+                if master not in master_to_slaves:
+                    master_to_slaves[master] = []
+                master_to_slaves[master].append(slave)
+            
+            # 准备账号下拉列表
+            account_list = ['请选择账号']
+            self.UIData['account_hash_map'] = {}
+            
+            # 第一步：先处理所有在dictBotInfo中的账号（已添加的账号）
+            for botHash in OlivaDiceNativeGUI.load.dictBotInfo:
+                bot_info = OlivaDiceNativeGUI.load.dictBotInfo[botHash]
+                
+                # 使用辅助方法获取bot名称
+                bot_name = self.get_bot_display_name(botHash, bot_info)
+                bot_id = str(bot_info.id) if hasattr(bot_info, 'id') and bot_info.id else "未知"
+                
+                # 添加到下拉列表
+                account_key = f"{bot_name} ({bot_id})"
+                account_list.append(account_key)
+                self.UIData['account_hash_map'][account_key] = botHash
+                
+                # 判断账号角色
+                role = "独立账号"
+                relation_info = "-"
+                
+                if botHash in relations:
+                    # 从账号
+                    role = "从账号"
+                    masterHash = relations[botHash]
+                    if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
+                        master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
+                        master_name = self.get_bot_display_name(masterHash, master_info)
+                        relation_info = f"→ {master_name} ({masterHash[:8]}...)"
+                    else:
+                        relation_info = f"→ {masterHash[:8]}..."
+                elif botHash in master_to_slaves:
+                    # 主账号
+                    role = "主账号"
+                    slave_count = len(master_to_slaves[botHash])
+                    relation_info = f"← {slave_count} 个从账号"
+                
+                # 插入到树形列表
+                self.UIObject['tree_account'].insert(
+                    '',
+                    'end',
+                    values = (role, bot_name, bot_id, botHash, relation_info)
+                )
+            
+            # 第二步：处理未找到的从账号（在relations中但不在dictBotInfo中）
+            for slave_hash in relations.keys():
+                # 跳过已经在dictBotInfo中处理过的账号
+                if slave_hash in OlivaDiceNativeGUI.load.dictBotInfo:
+                    continue
+                
+                # 从账号不在dictBotInfo中（可能是未登录或不存在）
+                bot_name = "未知"
+                bot_id = "-"
+                
+                # 添加到下拉列表，显示Hash以便区分（只显示前8位）
+                account_key = f"{bot_name} ({slave_hash[:8]}...)"
+                account_list.append(account_key)
+                self.UIData['account_hash_map'][account_key] = slave_hash
+                
+                # 判断账号角色（必然是从账号）
+                role = "从账号"
+                masterHash = relations[slave_hash]
+                if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
+                    master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
+                    master_name = self.get_bot_display_name(masterHash, master_info)
+                    relation_info = f"→ {master_name} ({masterHash[:8]}...)"
+                else:
+                    relation_info = f"→ {masterHash[:8]}..."
+                
+                # 插入到树形列表
+                self.UIObject['tree_account'].insert(
+                    '',
+                    'end',
+                    values = (role, bot_name, bot_id, slave_hash, relation_info)
+                )
+            
+            # 更新下拉框（只更新主账号下拉框）
+            self.UIObject['combo_master_account']['values'] = tuple(account_list)
+            
+            if len(account_list) > 1:
+                self.UIObject['combo_master_account'].current(0)
+            
+            # 更新当前选中的从账号显示
+            self.update_current_slave_display()
+                
+        except Exception as e:
+            messagebox.showerror("错误", f"刷新账号列表失败：{str(e)}\n{traceback.format_exc()}")
+
+    def copy_to_account(self):
+        """复制源账号数据到目标账号"""
+        try:
+            # 获取选中的账号作为源账号
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                messagebox.showwarning("警告", "请先在账号列表中选择源账号")
+                return
+            
+            # 获取选中账号的信息
+            item = self.UIObject['tree_account'].item(selection[0])
+            values = item['values']
+            source_bot_hash = values[3]
+            source_bot_name = values[1]
+            source_bot_id = values[2]
+            
+            # 创建对话框
+            copy_window = tkinter.Toplevel(self.UIObject['root'])
+            copy_window.title('复制账号数据')
+            copy_window.geometry('480x250')
+            copy_window.resizable(False, False)
+            copy_window.configure(bg = self.UIConfig['color_001'])
+            
+            # 显示源账号信息
+            frame_source_info = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
+            frame_source_info.pack(pady = (15, 10), fill = tkinter.X, padx = 15)
+            
+            label_source_title = tkinter.Label(
+                frame_source_info,
+                text = '源账号（已选定）：',
+                font = ('等线', 11, 'bold'),
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_004']
+            )
+            label_source_title.pack(anchor = 'w')
+            
+            source_info_text = f"  名称: {source_bot_name}  |  ID: {source_bot_id}\n  Hash: {source_bot_hash}"
+            label_source_info = tkinter.Label(
+                frame_source_info,
+                text = source_info_text,
+                font = ('等线', 10),
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_006'],
+                justify = 'left'
+            )
+            label_source_info.pack(anchor = 'w', padx = 10)
+            
+            # 分隔线
+            separator = tkinter.Frame(copy_window, height=2, bg = self.UIConfig['color_003'])
+            separator.pack(fill = tkinter.X, padx = 15, pady = 5)
+            
+            # 目标账号选择
+            frame_target = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
+            frame_target.pack(pady = 10)
+            
+            label_target = tkinter.Label(
+                frame_target,
+                text = '目标账号:',
+                font = ('等线', 10),
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_004']
+            )
+            label_target.pack(side = tkinter.LEFT, padx = (0, 5))
+            
+            # 获取目标账号列表（排除源账号）
+            account_list = []
+            for botHash in OlivaDiceNativeGUI.load.dictBotInfo:
+                if botHash == source_bot_hash:
+                    continue
+                bot_info = OlivaDiceNativeGUI.load.dictBotInfo[botHash]
+                bot_name = self.get_bot_display_name(botHash, bot_info)
+                bot_id = str(bot_info.id) if hasattr(bot_info, 'id') and bot_info.id else "未知"
+                account_key = f"{bot_name} ({bot_id}) - {botHash[:8]}..."
+                account_list.append((account_key, botHash))
+            
+            target_var = tkinter.StringVar()
+            combo_target = ttk.Combobox(frame_target, textvariable = target_var, width = 42)
+            combo_target.configure(state='readonly')
+            combo_target['values'] = tuple([item[0] for item in account_list])
+            if account_list:
+                combo_target.current(0)
+            combo_target.pack(side = tkinter.LEFT)
+            
+            # 按钮
+            frame_buttons = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
+            frame_buttons.pack(pady = 15)
+            
+            def do_copy():
+                target_idx = combo_target.current()
+                if target_idx < 0:
+                    messagebox.showwarning("警告", "请选择目标账号")
+                    return
+                
+                target_hash = account_list[target_idx][1]
+                
+                # 检查账号不能为unity（大小写模糊）
+                if source_bot_hash.lower() == "unity":
+                    messagebox.showerror("错误", "源账号不能为unity")
+                    return
+                if target_hash.lower() == "unity":
+                    messagebox.showerror("错误", "目标账号不能为unity")
+                    return
+                
+                if not messagebox.askyesno("确认", 
+                    f"确定要将源账号数据复制到目标账号吗？\n\n源账号: {source_bot_name} ({source_bot_id})\n目标账号: {account_list[target_idx][0]}\n\n目标账号的现有数据会被备份"):
+                    return
+                
+                try:
+                    success, result = OlivaDiceMaster.accountManager.importAccountData(
+                        source_bot_hash, target_hash, OlivaDiceNativeGUI.load.globalProc, overwrite=False
+                    )
+                    
+                    if success:
+                        messagebox.showinfo("成功", result)
+                        copy_window.destroy()
+                        self.refresh_account_list()
+                    else:
+                        messagebox.showerror("失败", result)
+                except Exception as e:
+                    messagebox.showerror("错误", f"复制失败：{str(e)}")
+            
+            button_ok = tkinter.Button(
+                frame_buttons,
+                text = '确定',
+                command = do_copy,
+                bd = 0,
+                bg = self.UIConfig['color_003'],
+                fg = self.UIConfig['color_004'],
+                relief = 'groove',
+                height = 2,
+                width = 10
+            )
+            button_ok.pack(side = tkinter.LEFT, padx = 5)
+            
+            button_cancel = tkinter.Button(
+                frame_buttons,
+                text = '取消',
+                command = copy_window.destroy,
+                bd = 0,
+                bg = self.UIConfig['color_003'],
+                fg = self.UIConfig['color_004'],
+                relief = 'groove',
+                height = 2,
+                width = 10
+            )
+            button_cancel.pack(side = tkinter.LEFT, padx = 5)
+            
+        except Exception as e:
+            messagebox.showerror("错误", f"打开复制对话框失败：{str(e)}")
+
+    def export_to_zip(self):
+        """导出源账号到压缩包"""
+        try:
+            # 获取选中的账号
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                messagebox.showwarning("警告", "请先在账号列表中选择要导出的账号")
+                return
+            
+            # 获取选中账号的信息
+            item = self.UIObject['tree_account'].item(selection[0])
+            values = item['values']
+            bot_hash = values[3]
+            bot_name = values[1]
+            
+            # 选择保存路径
+            default_filename = f"account_export_{bot_hash}.zip"
+            file_path = filedialog.asksaveasfilename(
+                title="导出账号数据到压缩包",
+                defaultextension=".zip",
+                initialfile=default_filename,
+                initialdir='./plugin/export',
+                filetypes=[("压缩文件", "*.zip"), ("所有文件", "*.*")]
+            )
+            
+            if not file_path:
+                return
+            
+            if not messagebox.askyesno("确认", f"确定要导出账号 {bot_name} 的数据到:\n{file_path}\n吗？"):
+                return
+            
+            try:
+                success, result = OlivaDiceMaster.accountManager.exportAccountData(
+                    bot_hash, OlivaDiceNativeGUI.load.globalProc, file_path
+                )
+                
+                if success:
+                    messagebox.showinfo("成功", result)
+                else:
+                    messagebox.showerror("失败", result)
+            except Exception as e:
+                messagebox.showerror("错误", f"导出失败：{str(e)}")
+                
+        except Exception as e:
+            messagebox.showerror("错误", f"导出账号数据失败：{str(e)}")
+
+    def import_from_zip(self):
+        """从压缩包导入到指定账号（基于选定的账号作为目标）"""
+        try:
+            # 获取选中的账号作为目标账号
+            selection = self.UIObject['tree_account'].selection()
+            if not selection:
+                messagebox.showwarning("警告", "请先在账号列表中选择目标账号")
+                return
+            
+            # 获取选中账号的信息
+            item = self.UIObject['tree_account'].item(selection[0])
+            values = item['values']
+            target_bot_hash = values[3]  # Hash在第4列
+            target_bot_name = values[1]  # 名称在第2列
+            target_bot_id = values[2]    # ID在第3列
+            
+            # 选择压缩包文件
+            zip_path = filedialog.askopenfilename(
+                title="选择账号数据压缩包",
+                initialdir='./plugin/export',
+                filetypes=[("压缩文件", "*.zip"), ("所有文件", "*.*")]
+            )
+            
+            if not zip_path:
+                return
+            
+            # 尝试从文件名自动识别源Hash
+            auto_detected_hash = None
+            filename = os.path.basename(zip_path)
+            # 匹配 account_export_xxxxx.zip 或 account_import_xxxxx.zip 格式
+            match = re.match(r'account_(?:export_|import_)?([a-f0-9]+)\.zip', filename, re.IGNORECASE)
+            if match:
+                auto_detected_hash = match.group(1)
+            
+            # 创建对话框
+            import_zip_window = tkinter.Toplevel(self.UIObject['root'])
+            import_zip_window.title('从压缩包导入')
+            import_zip_window.geometry('520x380')
+            import_zip_window.resizable(False, False)
+            import_zip_window.configure(bg = self.UIConfig['color_001'])
+            
+            # 显示压缩包信息
+            frame_zip_info = tkinter.Frame(import_zip_window, bg = self.UIConfig['color_001'])
+            frame_zip_info.pack(pady = (15, 10), fill = tkinter.X, padx = 15)
+            
+            label_zip_title = tkinter.Label(
+                frame_zip_info,
+                text = '源压缩包：',
+                font = ('等线', 11, 'bold'),
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_004']
+            )
+            label_zip_title.pack(anchor = 'w')
+            
+            zip_info_text = f"  文件: {os.path.basename(zip_path)}\n  路径: {zip_path}"
+            
+            label_zip_info = tkinter.Label(
+                frame_zip_info,
+                text = zip_info_text,
+                font = ('等线', 9),
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_006'],
+                justify = 'left'
+            )
+            label_zip_info.pack(anchor = 'w', padx = 10)
+            
+            # 分隔线
+            separator1 = tkinter.Frame(import_zip_window, height=2, bg = self.UIConfig['color_003'])
+            separator1.pack(fill = tkinter.X, padx = 15, pady = 5)
+            
+            # 显示目标账号信息（固定，不可更改）
+            frame_target_info = tkinter.Frame(import_zip_window, bg = self.UIConfig['color_001'])
+            frame_target_info.pack(pady = (10, 10), fill = tkinter.X, padx = 15)
+            
+            label_target_title = tkinter.Label(
+                frame_target_info,
+                text = '目标账号（已选定）：',
+                font = ('等线', 11, 'bold'),
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_004']
+            )
+            label_target_title.pack(anchor = 'w')
+            
+            target_info_text = f"  名称: {target_bot_name}\n  ID: {target_bot_id}\n  Hash: {target_bot_hash}"
+            label_target_info = tkinter.Label(
+                frame_target_info,
+                text = target_info_text,
+                font = ('等线', 10),
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_006'],
+                justify = 'left'
+            )
+            label_target_info.pack(anchor = 'w', padx = 10)
+            
+            # 分隔线
+            separator2 = tkinter.Frame(import_zip_window, height=2, bg = self.UIConfig['color_003'])
+            separator2.pack(fill = tkinter.X, padx = 15, pady = 5)
+            
+            # 源账号Hash输入区域
+            frame_source_hash = tkinter.Frame(import_zip_window, bg = self.UIConfig['color_001'])
+            frame_source_hash.pack(pady = (10, 10), fill = tkinter.X, padx = 15)
+            
+            label_source_hash = tkinter.Label(
+                frame_source_hash,
+                text = '源账号Hash:',
+                font = ('等线', 10),
+                bg = self.UIConfig['color_001'],
+                fg = self.UIConfig['color_004']
+            )
+            label_source_hash.pack(side = tkinter.LEFT, padx = (0, 5))
+            
+            source_hash_var = tkinter.StringVar()
+            if auto_detected_hash:
+                source_hash_var.set(auto_detected_hash)
+            entry_source_hash = tkinter.Entry(
+                frame_source_hash,
+                textvariable = source_hash_var,
+                width = 45,
+                font = ('等线', 9)
+            )
+            entry_source_hash.pack(side = tkinter.LEFT)
+            
+            if not auto_detected_hash:
+                # 如果自动识别失败，显示提示
+                label_hint = tkinter.Label(
+                    frame_source_hash,
+                    text = '（自动识别失败，请手动输入）',
+                    font = ('等线', 8),
+                    bg = self.UIConfig['color_001'],
+                    fg = self.UIConfig['color_006']
+                )
+                label_hint.pack(side = tkinter.LEFT, padx = (5, 0))
+            
+            # 按钮
+            frame_buttons = tkinter.Frame(import_zip_window, bg = self.UIConfig['color_001'])
+            frame_buttons.pack(pady = 15)
+            
+            def do_import():
+                source_hash = source_hash_var.get().strip()
+                
+                if not source_hash:
+                    messagebox.showwarning("警告", "请输入源账号Hash")
+                    return
+                
+                # 验证Hash格式（应该是十六进制字符串）
+                if not re.match(r'^[a-f0-9]+$', source_hash, re.IGNORECASE):
+                    messagebox.showerror("错误", "源账号Hash格式不正确，应为十六进制字符串")
+                    return
+                
+                # 检查账号不能为unity（大小写模糊）
+                if source_hash.lower() == "unity":
+                    messagebox.showerror("错误", "源账号不能为unity")
+                    return
+                if target_bot_hash.lower() == "unity":
+                    messagebox.showerror("错误", "目标账号不能为unity")
+                    return
+                
+                if not messagebox.askyesno("确认", 
+                    f"确定要从压缩包导入数据到目标账号吗？\n\n压缩包: {os.path.basename(zip_path)}\n源账号Hash: {source_hash}\n目标账号: {target_bot_name} ({target_bot_id})\nHash: {target_bot_hash}\n\n目标账号的现有数据会被备份"):
+                    return
+                
+                try:
+                    success, result, auto_hash = OlivaDiceMaster.accountManager.importAccountDataFromZip(
+                        zip_path, target_bot_hash, OlivaDiceNativeGUI.load.globalProc, overwrite=False, sourceBotHash=source_hash
+                    )
+                    
+                    if success:
+                        messagebox.showinfo("成功", result)
+                        import_zip_window.destroy()
+                        self.refresh_account_list()
+                    else:
+                        messagebox.showerror("失败", result)
+                except Exception as e:
+                    messagebox.showerror("错误", f"导入失败：{str(e)}")
+            
+            button_ok = tkinter.Button(
+                frame_buttons,
+                text = '确定',
+                command = do_import,
+                bd = 0,
+                bg = self.UIConfig['color_003'],
+                fg = self.UIConfig['color_004'],
+                relief = 'groove',
+                height = 2,
+                width = 10
+            )
+            button_ok.pack(side = tkinter.LEFT, padx = 5)
+            
+            button_cancel = tkinter.Button(
+                frame_buttons,
+                text = '取消',
+                command = import_zip_window.destroy,
+                bd = 0,
+                bg = self.UIConfig['color_003'],
+                fg = self.UIConfig['color_004'],
+                relief = 'groove',
+                height = 2,
+                width = 10
+            )
+            button_cancel.pack(side = tkinter.LEFT, padx = 5)
+            
+        except Exception as e:
+            messagebox.showerror("错误", f"打开导入对话框失败：{str(e)}")
 
     def init_frame_master(self):
         self.UIObject['frame_master_root'] = tkinter.Frame(self.UIObject['Notebook_root'])
@@ -2410,7 +3409,7 @@ class ConfigUI(object):
                     pass
 
         # 备份配置树视图更新（只有在有 OlivaDiceMaster 模块时才更新）
-        if OlivaDiceNativeGUI.load.backupFlag and 'tree_backup' in self.UIObject:
+        if OlivaDiceNativeGUI.load.masterModelFlag and 'tree_backup' in self.UIObject:
             tmp_tree_item_children = self.UIObject['tree_backup'].get_children()
             for tmp_tree_item_this in tmp_tree_item_children:
                 self.UIObject['tree_backup'].delete(tmp_tree_item_this)

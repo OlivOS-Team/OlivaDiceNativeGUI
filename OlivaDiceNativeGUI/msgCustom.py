@@ -413,6 +413,16 @@ dictStrCustomNote = {
     'strMasterBackupConfigGet': '【.backup】指令\n查看配置项',
     'strMasterBackupConfigNotFound': '【.backup】指令\n未找到配置项',
     'strMasterBackupInfo': '【.backup】指令\n备份相关条目信息',
+    'strMasterAccountLinkSuccess': '【.account link】指令\n已成功建立主从关系',
+    'strMasterAccountLinkFailed': '【.account link】指令\n建立主从关系失败',
+    'strMasterAccountUnlinkSuccess': '【.account unlink】指令\n已成功断开主从关系',
+    'strMasterAccountUnlinkFailed': '【.account unlink】指令\n断开主从关系失败',
+    'strMasterAccountList': '【.account list】指令\n列出所有账号和主从关系',
+    'strMasterAccountShow': '【.account show】指令\n显示账号详细信息',
+    'strMasterAccountImportSuccess': '【.account import】指令\n数据导入成功',
+    'strMasterAccountImportFailed': '【.account import】指令\n数据导入失败',
+    'strMasterAccountExportSuccess': '【.account export】指令\n数据导出成功',
+    'strMasterAccountExportFailed': '【.account export】指令\n数据导出失败',
     
     # OlivaDiceOdyssey
     'strOdysseyCnmodsSearch': '【.cnmods search】指令\n魔都模组搜索',
