@@ -34,10 +34,10 @@ class Event(object):
         OlivaDiceNativeGUI.load.dictBotInfo = Proc.Proc_data['bot_info_dict']
         
         # 检查是否存在 OlivaDiceMaster 模块
-        OlivaDiceNativeGUI.load.backupFlag = False
+        OlivaDiceNativeGUI.load.masterModelFlag = False
         plugin_list = Proc.get_plugin_list()
         if 'OlivaDiceMaster' in plugin_list:
-            OlivaDiceNativeGUI.load.backupFlag = True
+            OlivaDiceNativeGUI.load.masterModelFlag = True
 
         threading.Thread(
             target = OlivaDiceNativeGUI.load.checkOnlineStatusLoop,
