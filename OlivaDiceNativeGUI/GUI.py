@@ -1516,11 +1516,28 @@ class ConfigUI(object):
         except Exception as e:
             messagebox.showerror("错误", f"断开主从关系失败：{str(e)}")
 
-    def get_bot_display_name(self, botHash, bot_info):
-        """获取bot的显示名称（类似骰主列表的实现）"""
+    def get_bot_display_name(self, botHash, bot_info, plugin_event=None):
+        """
+        获取bot的显示名称
+        """
         bot_name = "未知"
-        if hasattr(bot_info, 'name') and bot_info.name:
-            bot_name = bot_info.name
+        # 优先通过API调用获取名称
+        try:
+            fake_event = OlivOS.API.Event(
+                OlivOS.contentAPI.fake_sdk_event(
+                    bot_info=bot_info,
+                    fakename='OlivaDiceMaster'
+                ),
+                None
+            )
+            res_data = fake_event.get_login_info(bot_info)
+            if res_data and res_data.get('active') and 'data' in res_data:
+                bot_name = res_data['data'].get('name', '未知')
+                if bot_name and bot_name != '未知':
+                    return bot_name
+        except:
+            pass
+        # 尝试从用户配置中获取保存的昵称
         try:
             if hasattr(bot_info, 'id') and hasattr(bot_info, 'platform') and bot_info.platform:
                 bot_id = str(bot_info.id)
@@ -1529,18 +1546,15 @@ class ConfigUI(object):
                     userType = 'user',
                     platform = bot_info.platform['platform']
                 )
-                userConfigNoteKey = 'configNote'
-                dictUserConfigData = OlivaDiceCore.userConfig.dictUserConfigData
-                if bot_user_hash in dictUserConfigData:
-                    if botHash in dictUserConfigData[bot_user_hash]:
-                        if userConfigNoteKey in dictUserConfigData[bot_user_hash][botHash]:
-                            if 'userName' in dictUserConfigData[bot_user_hash][botHash][userConfigNoteKey]:
-                                saved_name = dictUserConfigData[bot_user_hash][botHash][userConfigNoteKey]['userName']
-                                if saved_name and saved_name != '用户':
-                                    bot_name = saved_name
+                saved_name = OlivaDiceCore.userConfig.getUserConfigByKeyWithHash(
+                    userHash = bot_user_hash,
+                    userConfigKey = 'userName',
+                    botHash = botHash
+                )
+                if saved_name and saved_name != '用户':
+                    bot_name = saved_name
         except:
             pass
-        
         return bot_name
     
     def show_account_context_menu(self, event):
