@@ -1195,7 +1195,7 @@ class ConfigUI(object):
         # 当前选中的从账号显示
         self.UIObject['label_current_slave'] = tkinter.Label(
             self.UIObject['frame_account_relation'],
-            text = '当前从账号: 未选择',
+            text = '当前选择账号: 未选择',
             font = ('等线', 10),
             bg = self.UIConfig['color_001'],
             fg = self.UIConfig['color_006']
@@ -1387,23 +1387,26 @@ class ConfigUI(object):
         try:
             selection = self.UIObject['tree_account'].selection()
             if not selection:
-                self.UIObject['label_current_slave'].config(text='当前从账号: 未选择')
+                self.UIObject['label_current_slave'].config(text='当前选择账号: 未选择')
+                return
+            if len(selection) > 1:
+                self.UIObject['label_current_slave'].config(text='当前选择账号: 多个')
                 return
             item = self.UIObject['tree_account'].item(selection[0])
             values = item['values']
-            bot_name = values[1]  # 名称
-            bot_id = values[2]    # ID
-            bot_hash = values[3]  # Hash
+            bot_name = values[1]
+            bot_id = values[2]
+            bot_hash = values[3]
             # 格式化显示
             if bot_id == "-":
                 # 未找到的从账号
-                display_text = f"当前从账号: {bot_name} ({bot_hash[:8]}...)"
+                display_text = f"当前选择账号: {bot_name} ({bot_hash[:8]}...)"
             else:
-                display_text = f"当前从账号: {bot_name} ({bot_id})"
+                display_text = f"当前选择账号: {bot_name} ({bot_id})"
             
             self.UIObject['label_current_slave'].config(text=display_text)
         except Exception as e:
-            self.UIObject['label_current_slave'].config(text='当前从账号: 未选择')
+            self.UIObject['label_current_slave'].config(text='当前选择账号: 未选择')
     
     def link_account(self):
         """建立主从关系"""
