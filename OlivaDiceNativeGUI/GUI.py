@@ -1325,10 +1325,10 @@ class ConfigUI(object):
         self.UIObject['button_refresh_account'].bind('<Leave>', lambda x : self.buttom_action('button_refresh_account', '<Leave>'))
         self.UIObject['button_refresh_account'].pack(side = tkinter.LEFT, padx = (0, 5))
 
-        # 复制到账号按钮
+        # 从源账号导入按钮（目标账号已选定）
         self.UIObject['button_copy_to_account'] = tkinter.Button(
             self.UIObject['button_frame_account'],
-            text = '复制到目标账号',
+            text = '从源账号导入',
             command = lambda : self.copy_to_account(),
             bd = 0,
             activebackground = self.UIConfig['color_002'],
@@ -1722,73 +1722,73 @@ class ConfigUI(object):
             messagebox.showerror("错误", f"刷新账号列表失败：{str(e)}\n{traceback.format_exc()}")
 
     def copy_to_account(self):
-        """复制源账号数据到目标账号"""
+        """从源账号导入数据到目标账号"""
         try:
-            # 获取选中的账号作为源账号
+            # 获取选中的账号作为目标账号
             selection = self.UIObject['tree_account'].selection()
             if not selection:
-                messagebox.showwarning("警告", "请先在账号列表中选择源账号")
+                messagebox.showwarning("警告", "请先在账号列表中选择目标账号")
                 return
             
-            # 获取选中账号的信息
+            # 获取选中账号的信息（目标账号）
             item = self.UIObject['tree_account'].item(selection[0])
             values = item['values']
-            source_bot_hash = values[3]
-            source_bot_name = values[1]
-            source_bot_id = values[2]
+            target_bot_hash = values[3]
+            target_bot_name = values[1]
+            target_bot_id = values[2]
             
             # 创建对话框
             copy_window = tkinter.Toplevel(self.UIObject['root'])
-            copy_window.title('复制账号数据')
+            copy_window.title('从源账号导入数据')
             copy_window.geometry('480x250')
             copy_window.resizable(False, False)
             copy_window.configure(bg = self.UIConfig['color_001'])
             
-            # 显示源账号信息
-            frame_source_info = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
-            frame_source_info.pack(pady = (15, 10), fill = tkinter.X, padx = 15)
+            # 显示目标账号信息
+            frame_target_info = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
+            frame_target_info.pack(pady = (15, 10), fill = tkinter.X, padx = 15)
             
-            label_source_title = tkinter.Label(
-                frame_source_info,
-                text = '源账号（已选定）：',
+            label_target_title = tkinter.Label(
+                frame_target_info,
+                text = '目标账号（已选定）：',
                 font = ('等线', 11, 'bold'),
                 bg = self.UIConfig['color_001'],
                 fg = self.UIConfig['color_004']
             )
-            label_source_title.pack(anchor = 'w')
+            label_target_title.pack(anchor = 'w')
             
-            source_info_text = f"  名称: {source_bot_name}  |  ID: {source_bot_id}\n  Hash: {source_bot_hash}"
-            label_source_info = tkinter.Label(
-                frame_source_info,
-                text = source_info_text,
+            target_info_text = f"  名称: {target_bot_name}  |  ID: {target_bot_id}\n  Hash: {target_bot_hash}"
+            label_target_info = tkinter.Label(
+                frame_target_info,
+                text = target_info_text,
                 font = ('等线', 10),
                 bg = self.UIConfig['color_001'],
                 fg = self.UIConfig['color_006'],
                 justify = 'left'
             )
-            label_source_info.pack(anchor = 'w', padx = 10)
+            label_target_info.pack(anchor = 'w', padx = 10)
             
             # 分隔线
             separator = tkinter.Frame(copy_window, height=2, bg = self.UIConfig['color_003'])
             separator.pack(fill = tkinter.X, padx = 15, pady = 5)
             
-            # 目标账号选择
-            frame_target = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
-            frame_target.pack(pady = 10)
+            # 源账号选择
+            frame_source = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
+            frame_source.pack(pady = 10)
             
-            label_target = tkinter.Label(
-                frame_target,
-                text = '目标账号:',
+            label_source = tkinter.Label(
+                frame_source,
+                text = '源账号:',
                 font = ('等线', 10),
                 bg = self.UIConfig['color_001'],
                 fg = self.UIConfig['color_004']
             )
-            label_target.pack(side = tkinter.LEFT, padx = (0, 5))
+            label_source.pack(side = tkinter.LEFT, padx = (0, 5))
             
-            # 获取目标账号列表（排除源账号）
+            # 获取源账号列表
             account_list = []
             for botHash in OlivaDiceNativeGUI.load.dictBotInfo:
-                if botHash == source_bot_hash:
+                if botHash == target_bot_hash:
                     continue
                 bot_info = OlivaDiceNativeGUI.load.dictBotInfo[botHash]
                 bot_name = self.get_bot_display_name(botHash, bot_info)
@@ -1796,41 +1796,41 @@ class ConfigUI(object):
                 account_key = f"{bot_name} ({bot_id}) - {botHash[:8]}..."
                 account_list.append((account_key, botHash))
             
-            target_var = tkinter.StringVar()
-            combo_target = ttk.Combobox(frame_target, textvariable = target_var, width = 42)
-            combo_target.configure(state='readonly')
-            combo_target['values'] = tuple([item[0] for item in account_list])
+            source_var = tkinter.StringVar()
+            combo_source = ttk.Combobox(frame_source, textvariable = source_var, width = 42)
+            combo_source.configure(state='readonly')
+            combo_source['values'] = tuple([item[0] for item in account_list])
             if account_list:
-                combo_target.current(0)
-            combo_target.pack(side = tkinter.LEFT)
+                combo_source.current(0)
+            combo_source.pack(side = tkinter.LEFT)
             
             # 按钮
             frame_buttons = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
             frame_buttons.pack(pady = 15)
             
             def do_copy():
-                target_idx = combo_target.current()
-                if target_idx < 0:
-                    messagebox.showwarning("警告", "请选择目标账号")
+                source_idx = combo_source.current()
+                if source_idx < 0:
+                    messagebox.showwarning("警告", "请选择源账号")
                     return
                 
-                target_hash = account_list[target_idx][1]
+                source_hash = account_list[source_idx][1]
                 
                 # 检查账号不能为unity（大小写模糊）
-                if source_bot_hash.lower() == "unity":
+                if source_hash.lower() == "unity":
                     messagebox.showerror("错误", "源账号不能为unity")
                     return
-                if target_hash.lower() == "unity":
+                if target_bot_hash.lower() == "unity":
                     messagebox.showerror("错误", "目标账号不能为unity")
                     return
                 
                 if not messagebox.askyesno("确认", 
-                    f"确定要将源账号数据复制到目标账号吗？\n\n源账号: {source_bot_name} ({source_bot_id})\n目标账号: {account_list[target_idx][0]}\n\n目标账号的现有数据会被备份"):
+                    f"确定要从源账号导入数据到目标账号吗？\n\n源账号: {account_list[source_idx][0]}\n目标账号: {target_bot_name} ({target_bot_id})\n\n目标账号的现有数据会被备份"):
                     return
                 
                 try:
                     success, result = OlivaDiceMaster.accountManager.importAccountData(
-                        source_bot_hash, target_hash, OlivaDiceNativeGUI.load.globalProc, overwrite=False
+                        source_hash, target_bot_hash, OlivaDiceNativeGUI.load.globalProc, overwrite=False
                     )
                     
                     if success:
@@ -1840,7 +1840,7 @@ class ConfigUI(object):
                     else:
                         messagebox.showerror("失败", result)
                 except Exception as e:
-                    messagebox.showerror("错误", f"复制失败：{str(e)}")
+                    messagebox.showerror("错误", f"导入失败：{str(e)}")
             
             button_ok = tkinter.Button(
                 frame_buttons,
@@ -1869,7 +1869,7 @@ class ConfigUI(object):
             button_cancel.pack(side = tkinter.LEFT, padx = 5)
             
         except Exception as e:
-            messagebox.showerror("错误", f"打开复制对话框失败：{str(e)}")
+            messagebox.showerror("错误", f"打开导入对话框失败：{str(e)}")
 
     def export_to_zip(self):
         """导出源账号到压缩包"""
