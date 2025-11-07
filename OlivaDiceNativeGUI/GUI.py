@@ -1147,7 +1147,7 @@ class ConfigUI(object):
         # 说明标签
         self.UIObject['label_account_info'] = tkinter.Label(
             self.UIObject['frame_account_root'],
-            text = '多账号连接管理：建立主从关系后，从账号会自动共享主账号的数据\n部分数据（如群开关状态）保持独立，不会被共享',
+            text = '多账号连接管理：建立主从关系后，从账号会自动共享主账号的数据\n部分数据（如群开关状态）保持独立，不会被共享\n提示：按住 Ctrl 键可以多选账号',
             font = ('等线', 10),
             bg = self.UIConfig['color_001'],
             fg = self.UIConfig['color_004'],
@@ -1195,7 +1195,7 @@ class ConfigUI(object):
         # 当前选中的从账号显示
         self.UIObject['label_current_slave'] = tkinter.Label(
             self.UIObject['frame_account_relation'],
-            text = '当前从账号: 未选择',
+            text = '当前选择账号: 未选择',
             font = ('等线', 10),
             bg = self.UIConfig['color_001'],
             fg = self.UIConfig['color_006']
@@ -1239,7 +1239,7 @@ class ConfigUI(object):
         self.UIObject['button_unlink_account'].pack(side = tkinter.LEFT, padx = (0, 5))
 
         # 账号列表区域
-        self.UIObject['tree_account'] = ttk.Treeview(self.UIObject['frame_account_root'])
+        self.UIObject['tree_account'] = ttk.Treeview(self.UIObject['frame_account_root'], selectmode='extended')
         self.UIObject['tree_account']['show'] = 'headings'
         self.UIObject['tree_account']['columns'] = ('ROLE', 'NAME', 'ID', 'HASH', 'RELATION')
         self.UIObject['tree_account'].column('ROLE', width = 80)
@@ -1325,10 +1325,10 @@ class ConfigUI(object):
         self.UIObject['button_refresh_account'].bind('<Leave>', lambda x : self.buttom_action('button_refresh_account', '<Leave>'))
         self.UIObject['button_refresh_account'].pack(side = tkinter.LEFT, padx = (0, 5))
 
-        # 复制到账号按钮
+        # 从源账号导入按钮（目标账号已选定）
         self.UIObject['button_copy_to_account'] = tkinter.Button(
             self.UIObject['button_frame_account'],
-            text = '复制到目标账号',
+            text = '从源账号导入',
             command = lambda : self.copy_to_account(),
             bd = 0,
             activebackground = self.UIConfig['color_002'],
@@ -1387,25 +1387,26 @@ class ConfigUI(object):
         try:
             selection = self.UIObject['tree_account'].selection()
             if not selection:
-                self.UIObject['label_current_slave'].config(text='当前从账号: 未选择')
+                self.UIObject['label_current_slave'].config(text='当前选择账号: 未选择')
                 return
-            
+            if len(selection) > 1:
+                self.UIObject['label_current_slave'].config(text='当前选择账号: 多个')
+                return
             item = self.UIObject['tree_account'].item(selection[0])
             values = item['values']
-            bot_name = values[1]  # 名称
-            bot_id = values[2]    # ID
-            bot_hash = values[3]  # Hash
-            
+            bot_name = values[1]
+            bot_id = values[2]
+            bot_hash = values[3]
             # 格式化显示
             if bot_id == "-":
                 # 未找到的从账号
-                display_text = f"当前从账号: {bot_name} ({bot_hash[:8]}...)"
+                display_text = f"当前选择账号: {bot_name} ({bot_hash[:8]}...)"
             else:
-                display_text = f"当前从账号: {bot_name} ({bot_id})"
+                display_text = f"当前选择账号: {bot_name} ({bot_id})"
             
             self.UIObject['label_current_slave'].config(text=display_text)
         except Exception as e:
-            self.UIObject['label_current_slave'].config(text='当前从账号: 未选择')
+            self.UIObject['label_current_slave'].config(text='当前选择账号: 未选择')
     
     def link_account(self):
         """建立主从关系"""
@@ -1415,104 +1416,194 @@ class ConfigUI(object):
             if not selection:
                 messagebox.showwarning("警告", "请先在账号列表中选择从账号")
                 return
-            
-            item = self.UIObject['tree_account'].item(selection[0])
-            values = item['values']
-            slave_hash = values[3]  # Hash在第4列
-            
             # 获取主账号
             master_key = self.UIData['account_master_StringVar'].get()
-            
             if not master_key or master_key == '请选择账号':
                 messagebox.showwarning("警告", "请选择主账号")
                 return
-            
             master_hash = self.UIData['account_hash_map'][master_key]
-            
-            if slave_hash == master_hash:
-                messagebox.showerror("错误", "从账号和主账号不能相同")
-                return
-            
-            # 检查账号不能为unity（大小写模糊）
-            if slave_hash.lower() == "unity":
-                messagebox.showerror("错误", "从账号不能为unity")
-                return
+            # 检查主账号不能为unity
             if master_hash.lower() == "unity":
                 messagebox.showerror("错误", "主账号不能为unity")
                 return
-            
-            # 调用账号管理模块
-            success, result = OlivaDiceMaster.accountManager.linkAccount(slave_hash, master_hash)
-            
-            if success:
-                # 保存当前主账号选择
-                current_master = self.UIData['account_master_StringVar'].get()
-                
-                messagebox.showinfo("成功", result)
-                # 刷新列表（会自动清除选择并更新显示）
-                self.refresh_account_list()
-                
-                # 恢复主账号选择
-                if current_master and current_master != '请选择账号':
-                    try:
-                        values = self.UIObject['combo_master_account']['values']
-                        if current_master in values:
-                            index = list(values).index(current_master)
-                            self.UIObject['combo_master_account'].current(index)
-                    except:
-                        pass
+            # 收集所有选中的从账号信息
+            slave_list = []
+            for item_id in selection:
+                item = self.UIObject['tree_account'].item(item_id)
+                values = item['values']
+                slave_hash = values[3]
+                bot_name = values[1]
+                bot_id = values[2]
+                # 检查从账号不能为unity
+                if slave_hash.lower() == "unity":
+                    continue  # 跳过unity账号
+                if slave_hash == master_hash:
+                    continue  # 跳过与主账号相同的账号
+                slave_list.append((slave_hash, bot_name, bot_id))
+            if not slave_list:
+                messagebox.showwarning("警告", "没有有效的从账号可以建立连接（已排除unity和主账号）")
+                return
+            # 如果选择了多个账号，显示确认对话框
+            if len(slave_list) > 1:
+                slave_names = "\n".join([f"  - {name} ({id})" for hash, name, id in slave_list])
+                if not messagebox.askyesno("确认", 
+                    f"确定要将以下 {len(slave_list)} 个账号依次与主账号建立连接吗？\n\n主账号: {master_key}\n\n从账号列表:\n{slave_names}"):
+                    return
+            # 依次建立连接
+            success_count = 0
+            failed_list = []
+            for slave_hash, bot_name, bot_id in slave_list:
+                success, result = OlivaDiceMaster.accountManager.linkAccount(slave_hash, master_hash)
+                if success:
+                    success_count += 1
+                else:
+                    display_name = f"{bot_name} ({bot_id})" if bot_id != "-" else f"{bot_name} ({slave_hash[:8]}...)"
+                    failed_list.append(f"{display_name}: {result}")
+            # 保存当前主账号选择
+            current_master = self.UIData['account_master_StringVar'].get()
+            # 显示结果
+            if success_count == len(slave_list):
+                # 全部成功
+                if len(slave_list) == 1:
+                    messagebox.showinfo("成功", f"已成功建立主从关系")
+                else:
+                    messagebox.showinfo("成功", f"已成功为 {success_count} 个账号建立主从关系")
+            elif success_count > 0:
+                # 部分成功
+                result_msg = f"部分成功：{success_count}/{len(slave_list)} 个账号建立连接成功\n\n"
+                if failed_list:
+                    result_msg += "失败的账号:\n" + "\n".join(failed_list)
+                messagebox.showwarning("部分成功", result_msg)
             else:
-                messagebox.showerror("失败", result)
+                # 全部失败
+                result_msg = "所有账号建立连接失败:\n\n" + "\n".join(failed_list)
+                messagebox.showerror("失败", result_msg)
+            self.refresh_account_list()
+            if current_master and current_master != '请选择账号':
+                try:
+                    values = self.UIObject['combo_master_account']['values']
+                    if current_master in values:
+                        index = list(values).index(current_master)
+                        self.UIObject['combo_master_account'].current(index)
+                except:
+                    pass
         except Exception as e:
             messagebox.showerror("错误", f"建立主从关系失败：{str(e)}")
 
     def unlink_account(self):
         """断开主从关系"""
         try:
-            # 从Treeview中获取选中的账号作为从账号
             selection = self.UIObject['tree_account'].selection()
             if not selection:
-                messagebox.showwarning("警告", "请先在账号列表中选择要断开的从账号")
+                messagebox.showwarning("警告", "请先在账号列表中选择要断开的账号")
+                return
+            # 获取所有账号关系
+            relations = OlivaDiceCore.console.getAllAccountRelations()
+            master_to_slaves = {}
+            for slave, master in relations.items():
+                if master not in master_to_slaves:
+                    master_to_slaves[master] = []
+                master_to_slaves[master].append(slave)
+            # 收集选中的账号信息并分类
+            selected_slaves = []
+            selected_masters = []
+            for item_id in selection:
+                item = self.UIObject['tree_account'].item(item_id)
+                values = item['values']
+                bot_hash = values[3]
+                bot_name = values[1]
+                bot_id = values[2]
+                role = values[0]
+                display_name = f"{bot_name} ({bot_id})" if bot_id != "-" else f"{bot_name} ({bot_hash[:8]}...)"
+                if role == "从账号":
+                    # 是从账号
+                    selected_slaves.append((bot_hash, bot_name, bot_id, display_name))
+                elif role == "主账号":
+                    # 是主账号
+                    selected_masters.append((bot_hash, bot_name, bot_id, display_name))
+            # 不能同时选择主账号和从账号
+            if selected_slaves and selected_masters:
+                messagebox.showerror("错误", 
+                    "不能同时选择主账号和从账号进行断开操作！\n\n请只选择从账号或只选择主账号。")
                 return
             
-            item = self.UIObject['tree_account'].item(selection[0])
-            values = item['values']
-            slave_hash = values[3]  # Hash在第4列
-            bot_name = values[1]    # 名称
-            bot_id = values[2]      # ID
-            
-            # 格式化显示名称用于确认对话框
-            if bot_id == "-":
-                display_name = f"{bot_name} ({slave_hash[:8]}...)"
-            else:
-                display_name = f"{bot_name} ({bot_id})"
-            
-            # 确认对话框
-            if not messagebox.askyesno("确认", f"确定要断开账号 {display_name} 的主从关系吗？"):
+            if not selected_slaves and not selected_masters:
+                messagebox.showwarning("警告", "没有有效的账号可以断开（只能选择主账号或从账号）")
                 return
-            
-            # 调用账号管理模块
-            success, result = OlivaDiceMaster.accountManager.unlinkAccount(slave_hash)
-            
-            if success:
-                # 保存当前主账号选择
-                current_master = self.UIData['account_master_StringVar'].get()
-                
-                messagebox.showinfo("成功", result)
-                # 刷新列表（会自动清除选择并更新显示）
-                self.refresh_account_list()
-                
-                # 恢复主账号选择
-                if current_master and current_master != '请选择账号':
-                    try:
-                        values = self.UIObject['combo_master_account']['values']
-                        if current_master in values:
-                            index = list(values).index(current_master)
-                            self.UIObject['combo_master_account'].current(index)
-                    except:
-                        pass
+            # 收集要断开的账号
+            accounts_to_unlink = []
+            if selected_slaves:
+                slave_masters = {}
+                for slave_hash, bot_name, bot_id, display_name in selected_slaves:
+                    if slave_hash in relations:
+                        master_hash = relations[slave_hash]
+                        if master_hash not in slave_masters:
+                            slave_masters[master_hash] = []
+                        slave_masters[master_hash].append((slave_hash, bot_name, bot_id, display_name))
+                    else:
+                        messagebox.showwarning("警告", f"账号 {display_name} 不是从账号，无法断开")
+                        return
+                if len(slave_masters) > 1:
+                    master_list = "\n".join([f"  - {master_hash[:8]}... ({len(slaves)} 个从账号)" 
+                                             for master_hash, slaves in slave_masters.items()])
+                    messagebox.showerror("错误", 
+                        f"只能同时断开属于同一个主账号的所有从账号！\n\n您选择了属于 {len(slave_masters)} 个不同主账号的从账号：\n{master_list}\n\n请只选择属于同一个主账号的从账号。")
+                    return
+                accounts_to_unlink = selected_slaves
+                account_type = "从账号"
             else:
-                messagebox.showerror("失败", result)
+                accounts_to_unlink = selected_masters
+                account_type = "主账号"
+            
+            # 显示确认对话框
+            if len(accounts_to_unlink) == 1:
+                hash, name, id, display_name = accounts_to_unlink[0]
+                if not messagebox.askyesno("确认", f"确定要断开账号 {display_name} 的主从关系吗？"):
+                    return
+            else:
+                account_names = "\n".join([f"  - {display_name}" for hash, name, id, display_name in accounts_to_unlink])
+                if not messagebox.askyesno("确认", 
+                    f"确定要断开以下 {len(accounts_to_unlink)} 个{account_type}的主从关系吗？\n\n账号列表:\n{account_names}"):
+                    return
+            # 保存选中状态
+            # 依次断开连接
+            success_count = 0
+            failed_list = []
+            for bot_hash, bot_name, bot_id, display_name in accounts_to_unlink:
+                try:
+                    success, result = OlivaDiceMaster.accountManager.unlinkAccount(bot_hash)
+                    if success:
+                        success_count += 1
+                    else:
+                        failed_list.append(f"{display_name}: {result}")
+                except Exception as e:
+                    failed_list.append(f"{display_name}: {str(e)}")
+            # 保存当前主账号选择
+            current_master = self.UIData['account_master_StringVar'].get()
+            # 显示结果
+            if success_count == len(accounts_to_unlink):
+                if len(accounts_to_unlink) == 1:
+                    messagebox.showinfo("成功", "已成功断开主从关系")
+                else:
+                    messagebox.showinfo("成功", f"已成功断开 {success_count} 个账号的主从关系")
+            elif success_count > 0:
+                result_msg = f"部分成功：{success_count}/{len(accounts_to_unlink)} 个账号断开成功\n\n"
+                if failed_list:
+                    result_msg += "失败的账号:\n" + "\n".join(failed_list)
+                messagebox.showwarning("部分成功", result_msg)
+            else:
+                result_msg = "所有账号断开失败:\n\n" + "\n".join(failed_list)
+                messagebox.showerror("失败", result_msg)
+            self.refresh_account_list()
+            # 恢复主账号选择
+            if current_master and current_master != '请选择账号':
+                try:
+                    values = self.UIObject['combo_master_account']['values']
+                    if current_master in values:
+                        index = list(values).index(current_master)
+                        self.UIObject['combo_master_account'].current(index)
+                except:
+                    pass
         except Exception as e:
             messagebox.showerror("错误", f"断开主从关系失败：{str(e)}")
 
@@ -1560,7 +1651,6 @@ class ConfigUI(object):
     def show_account_context_menu(self, event):
         """显示账号列表的右键菜单"""
         try:
-            # 选择右键点击的项目
             item = self.UIObject['tree_account'].identify_row(event.y)
             if item:
                 self.UIObject['tree_account'].selection_set(item)
@@ -1575,11 +1665,9 @@ class ConfigUI(object):
             selection = self.UIObject['tree_account'].selection()
             if not selection:
                 return
-            
             item = self.UIObject['tree_account'].item(selection[0])
             values = item['values']
-            bot_hash = values[3]  # Hash在第4列
-            
+            bot_hash = values[3]
             if bot_hash:
                 self.UIObject['root'].clipboard_clear()
                 self.UIObject['root'].clipboard_append(bot_hash)
@@ -1589,29 +1677,25 @@ class ConfigUI(object):
             messagebox.showerror("错误", f"复制失败：{str(e)}")
     
     def link_account_from_menu(self):
-        """从右键菜单建立主从关系（右键选中的账号作为从账号）"""
+        """从右键菜单建立主从关系"""
         try:
             # 确保有选中的账号
             selection = self.UIObject['tree_account'].selection()
             if not selection:
                 messagebox.showwarning("警告", "请先选择一个账号")
                 return
-            
-            # 直接调用现有的建立主从关系函数
             self.link_account()
         except Exception as e:
             messagebox.showerror("错误", f"建立主从关系失败：{str(e)}")
     
     def unlink_account_from_menu(self):
-        """从右键菜单断开主从关系（右键选中的账号作为从账号）"""
+        """从右键菜单断开主从关系"""
         try:
             # 确保有选中的账号
             selection = self.UIObject['tree_account'].selection()
             if not selection:
                 messagebox.showwarning("警告", "请先选择一个账号")
                 return
-            
-            # 直接调用现有的断开主从关系函数
             self.unlink_account()
         except Exception as e:
             messagebox.showerror("错误", f"断开主从关系失败：{str(e)}")
@@ -1622,40 +1706,27 @@ class ConfigUI(object):
             # 清空树形列表
             for item in self.UIObject['tree_account'].get_children():
                 self.UIObject['tree_account'].delete(item)
-            
             # 获取所有账号和关系
             relations = OlivaDiceCore.console.getAllAccountRelations()
-            
-            # 创建主账号到从账号的映射
             master_to_slaves = {}
             for slave, master in relations.items():
                 if master not in master_to_slaves:
                     master_to_slaves[master] = []
                 master_to_slaves[master].append(slave)
-            
-            # 准备账号下拉列表
             account_list = ['请选择账号']
             self.UIData['account_hash_map'] = {}
-            
-            # 第一步：先处理所有在dictBotInfo中的账号（已添加的账号）
+            # 先处理所有在dictBotInfo中的账号
             for botHash in OlivaDiceNativeGUI.load.dictBotInfo:
                 bot_info = OlivaDiceNativeGUI.load.dictBotInfo[botHash]
-                
-                # 使用辅助方法获取bot名称
                 bot_name = self.get_bot_display_name(botHash, bot_info)
                 bot_id = str(bot_info.id) if hasattr(bot_info, 'id') and bot_info.id else "未知"
-                
-                # 添加到下拉列表
                 account_key = f"{bot_name} ({bot_id})"
                 account_list.append(account_key)
                 self.UIData['account_hash_map'][account_key] = botHash
-                
                 # 判断账号角色
                 role = "独立账号"
                 relation_info = "-"
-                
                 if botHash in relations:
-                    # 从账号
                     role = "从账号"
                     masterHash = relations[botHash]
                     if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
@@ -1665,130 +1736,130 @@ class ConfigUI(object):
                     else:
                         relation_info = f"→ {masterHash[:8]}..."
                 elif botHash in master_to_slaves:
-                    # 主账号
                     role = "主账号"
                     slave_count = len(master_to_slaves[botHash])
                     relation_info = f"← {slave_count} 个从账号"
-                
-                # 插入到树形列表
-                self.UIObject['tree_account'].insert(
+                item_id = self.UIObject['tree_account'].insert(
                     '',
                     'end',
                     values = (role, bot_name, bot_id, botHash, relation_info)
                 )
-            
-            # 第二步：处理未找到的从账号（在relations中但不在dictBotInfo中）
+            # 处理未找到的从账号
             for slave_hash in relations.keys():
-                # 跳过已经在dictBotInfo中处理过的账号
                 if slave_hash in OlivaDiceNativeGUI.load.dictBotInfo:
                     continue
-                
-                # 从账号不在dictBotInfo中（可能是未登录或不存在）
                 bot_name = "未知"
                 bot_id = "-"
-                
-                # 添加到下拉列表，显示Hash以便区分（只显示前8位）
                 account_key = f"{bot_name} ({slave_hash[:8]}...)"
                 account_list.append(account_key)
                 self.UIData['account_hash_map'][account_key] = slave_hash
-                
-                # 判断账号角色（必然是从账号）
+                # 判断账号角色
                 role = "从账号"
-                masterHash = relations[slave_hash]
-                if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
-                    master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
-                    master_name = self.get_bot_display_name(masterHash, master_info)
-                    relation_info = f"→ {master_name} ({masterHash[:8]}...)"
-                else:
-                    relation_info = f"→ {masterHash[:8]}..."
-                
+                relation_info = "-"
+                if slave_hash in relations:
+                    masterHash = relations[slave_hash]
+                    if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
+                        master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
+                        master_name = self.get_bot_display_name(masterHash, master_info)
+                        relation_info = f"→ {master_name} ({masterHash[:8]}...)"
+                    else:
+                        relation_info = f"→ {masterHash[:8]}..."
+                # 检查是否也是主账号
+                if slave_hash in master_to_slaves:
+                    if role == "从账号":
+                        slave_count = len(master_to_slaves[slave_hash])
+                        if slave_hash in relations:
+                            masterHash = relations[slave_hash]
+                            if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
+                                master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
+                                master_name = self.get_bot_display_name(masterHash, master_info)
+                                relation_info = f"→ {master_name} ({masterHash[:8]}...) | ← {slave_count} 个从账号"
+                            else:
+                                relation_info = f"→ {masterHash[:8]}... | ← {slave_count} 个从账号"
+                        else:
+                            relation_info = f"← {slave_count} 个从账号"
+                    else:
+                        role = "主账号"
+                        slave_count = len(master_to_slaves[slave_hash])
+                        relation_info = f"← {slave_count} 个从账号"
                 # 插入到树形列表
-                self.UIObject['tree_account'].insert(
+                item_id = self.UIObject['tree_account'].insert(
                     '',
                     'end',
                     values = (role, bot_name, bot_id, slave_hash, relation_info)
                 )
-            
-            # 更新下拉框（只更新主账号下拉框）
+            # 更新下拉框
             self.UIObject['combo_master_account']['values'] = tuple(account_list)
-            
             if len(account_list) > 1:
                 self.UIObject['combo_master_account'].current(0)
-            
             # 更新当前选中的从账号显示
             self.update_current_slave_display()
-                
         except Exception as e:
             messagebox.showerror("错误", f"刷新账号列表失败：{str(e)}\n{traceback.format_exc()}")
 
     def copy_to_account(self):
-        """复制源账号数据到目标账号"""
+        """从源账号导入数据到目标账号"""
         try:
-            # 获取选中的账号作为源账号
+            # 获取选中的账号作为目标账号
             selection = self.UIObject['tree_account'].selection()
             if not selection:
-                messagebox.showwarning("警告", "请先在账号列表中选择源账号")
+                messagebox.showwarning("警告", "请先在账号列表中选择目标账号")
                 return
-            
+            # 检查是否选择了多个账号
+            if len(selection) > 1:
+                messagebox.showwarning("警告", "导入功能仅支持选择单个账号，请只选择一个目标账号")
+                return
             # 获取选中账号的信息
             item = self.UIObject['tree_account'].item(selection[0])
             values = item['values']
-            source_bot_hash = values[3]
-            source_bot_name = values[1]
-            source_bot_id = values[2]
-            
+            target_bot_hash = values[3]
+            target_bot_name = values[1]
+            target_bot_id = values[2]
             # 创建对话框
             copy_window = tkinter.Toplevel(self.UIObject['root'])
-            copy_window.title('复制账号数据')
+            copy_window.title('从源账号导入数据')
             copy_window.geometry('480x250')
             copy_window.resizable(False, False)
             copy_window.configure(bg = self.UIConfig['color_001'])
-            
-            # 显示源账号信息
-            frame_source_info = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
-            frame_source_info.pack(pady = (15, 10), fill = tkinter.X, padx = 15)
-            
-            label_source_title = tkinter.Label(
-                frame_source_info,
-                text = '源账号（已选定）：',
+            # 显示目标账号
+            frame_target_info = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
+            frame_target_info.pack(pady = (15, 10), fill = tkinter.X, padx = 15)
+            label_target_title = tkinter.Label(
+                frame_target_info,
+                text = '目标账号（已选定）：',
                 font = ('等线', 11, 'bold'),
                 bg = self.UIConfig['color_001'],
                 fg = self.UIConfig['color_004']
             )
-            label_source_title.pack(anchor = 'w')
-            
-            source_info_text = f"  名称: {source_bot_name}  |  ID: {source_bot_id}\n  Hash: {source_bot_hash}"
-            label_source_info = tkinter.Label(
-                frame_source_info,
-                text = source_info_text,
+            label_target_title.pack(anchor = 'w')
+            target_info_text = f"  名称: {target_bot_name}  |  ID: {target_bot_id}\n  Hash: {target_bot_hash}"
+            label_target_info = tkinter.Label(
+                frame_target_info,
+                text = target_info_text,
                 font = ('等线', 10),
                 bg = self.UIConfig['color_001'],
                 fg = self.UIConfig['color_006'],
                 justify = 'left'
             )
-            label_source_info.pack(anchor = 'w', padx = 10)
-            
-            # 分隔线
+            label_target_info.pack(anchor = 'w', padx = 10)
             separator = tkinter.Frame(copy_window, height=2, bg = self.UIConfig['color_003'])
             separator.pack(fill = tkinter.X, padx = 15, pady = 5)
-            
-            # 目标账号选择
-            frame_target = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
-            frame_target.pack(pady = 10)
-            
-            label_target = tkinter.Label(
-                frame_target,
-                text = '目标账号:',
+            # 源账号选择
+            frame_source = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
+            frame_source.pack(pady = 10)
+            label_source = tkinter.Label(
+                frame_source,
+                text = '源账号:',
                 font = ('等线', 10),
                 bg = self.UIConfig['color_001'],
                 fg = self.UIConfig['color_004']
             )
-            label_target.pack(side = tkinter.LEFT, padx = (0, 5))
-            
-            # 获取目标账号列表（排除源账号）
+            label_source.pack(side = tkinter.LEFT, padx = (0, 5))
+
+            # 获取源账号列表
             account_list = []
             for botHash in OlivaDiceNativeGUI.load.dictBotInfo:
-                if botHash == source_bot_hash:
+                if botHash == target_bot_hash:
                     continue
                 bot_info = OlivaDiceNativeGUI.load.dictBotInfo[botHash]
                 bot_name = self.get_bot_display_name(botHash, bot_info)
@@ -1796,41 +1867,35 @@ class ConfigUI(object):
                 account_key = f"{bot_name} ({bot_id}) - {botHash[:8]}..."
                 account_list.append((account_key, botHash))
             
-            target_var = tkinter.StringVar()
-            combo_target = ttk.Combobox(frame_target, textvariable = target_var, width = 42)
-            combo_target.configure(state='readonly')
-            combo_target['values'] = tuple([item[0] for item in account_list])
+            source_var = tkinter.StringVar()
+            combo_source = ttk.Combobox(frame_source, textvariable = source_var, width = 42)
+            combo_source.configure(state='readonly')
+            combo_source['values'] = tuple([item[0] for item in account_list])
             if account_list:
-                combo_target.current(0)
-            combo_target.pack(side = tkinter.LEFT)
-            
-            # 按钮
+                combo_source.current(0)
+            combo_source.pack(side = tkinter.LEFT)
             frame_buttons = tkinter.Frame(copy_window, bg = self.UIConfig['color_001'])
             frame_buttons.pack(pady = 15)
-            
             def do_copy():
-                target_idx = combo_target.current()
-                if target_idx < 0:
-                    messagebox.showwarning("警告", "请选择目标账号")
+                source_idx = combo_source.current()
+                if source_idx < 0:
+                    messagebox.showwarning("警告", "请选择源账号")
                     return
                 
-                target_hash = account_list[target_idx][1]
-                
-                # 检查账号不能为unity（大小写模糊）
-                if source_bot_hash.lower() == "unity":
+                source_hash = account_list[source_idx][1]
+                # 检查账号不能为unity
+                if source_hash.lower() == "unity":
                     messagebox.showerror("错误", "源账号不能为unity")
                     return
-                if target_hash.lower() == "unity":
+                if target_bot_hash.lower() == "unity":
                     messagebox.showerror("错误", "目标账号不能为unity")
                     return
-                
                 if not messagebox.askyesno("确认", 
-                    f"确定要将源账号数据复制到目标账号吗？\n\n源账号: {source_bot_name} ({source_bot_id})\n目标账号: {account_list[target_idx][0]}\n\n目标账号的现有数据会被备份"):
+                    f"确定要从源账号导入数据到目标账号吗？\n\n源账号: {account_list[source_idx][0]}\n目标账号: {target_bot_name} ({target_bot_id})\n\n目标账号的现有数据会被备份"):
                     return
-                
                 try:
                     success, result = OlivaDiceMaster.accountManager.importAccountData(
-                        source_bot_hash, target_hash, OlivaDiceNativeGUI.load.globalProc, overwrite=False
+                        source_hash, target_bot_hash, OlivaDiceNativeGUI.load.globalProc, overwrite=False
                     )
                     
                     if success:
@@ -1840,8 +1905,7 @@ class ConfigUI(object):
                     else:
                         messagebox.showerror("失败", result)
                 except Exception as e:
-                    messagebox.showerror("错误", f"复制失败：{str(e)}")
-            
+                    messagebox.showerror("错误", f"导入失败：{str(e)}")
             button_ok = tkinter.Button(
                 frame_buttons,
                 text = '确定',
@@ -1869,7 +1933,7 @@ class ConfigUI(object):
             button_cancel.pack(side = tkinter.LEFT, padx = 5)
             
         except Exception as e:
-            messagebox.showerror("错误", f"打开复制对话框失败：{str(e)}")
+            messagebox.showerror("错误", f"打开导入对话框失败：{str(e)}")
 
     def export_to_zip(self):
         """导出源账号到压缩包"""
@@ -1879,60 +1943,112 @@ class ConfigUI(object):
             if not selection:
                 messagebox.showwarning("警告", "请先在账号列表中选择要导出的账号")
                 return
-            
-            # 获取选中账号的信息
-            item = self.UIObject['tree_account'].item(selection[0])
-            values = item['values']
-            bot_hash = values[3]
-            bot_name = values[1]
-            
-            # 选择保存路径
-            default_filename = f"account_export_{bot_hash}.zip"
-            file_path = filedialog.asksaveasfilename(
-                title="导出账号数据到压缩包",
-                defaultextension=".zip",
-                initialfile=default_filename,
-                initialdir='./plugin/export',
-                filetypes=[("压缩文件", "*.zip"), ("所有文件", "*.*")]
-            )
-            
-            if not file_path:
-                return
-            
-            if not messagebox.askyesno("确认", f"确定要导出账号 {bot_name} 的数据到:\n{file_path}\n吗？"):
-                return
-            
-            try:
-                success, result = OlivaDiceMaster.accountManager.exportAccountData(
-                    bot_hash, OlivaDiceNativeGUI.load.globalProc, file_path
+            # 收集所有选中的账号信息
+            account_list = []
+            for item_id in selection:
+                item = self.UIObject['tree_account'].item(item_id)
+                values = item['values']
+                bot_hash = values[3]
+                bot_name = values[1]
+                bot_id = values[2]
+                account_list.append((bot_hash, bot_name, bot_id))
+            if len(account_list) == 1:
+                # 单个账号导出
+                bot_hash, bot_name, bot_id = account_list[0]
+                # 选择保存路径
+                default_filename = f"account_export_{bot_hash}.zip"
+                file_path = filedialog.asksaveasfilename(
+                    title="导出账号数据到压缩包",
+                    defaultextension=".zip",
+                    initialfile=default_filename,
+                    initialdir='./plugin/export',
+                    filetypes=[("压缩文件", "*.zip"), ("所有文件", "*.*")]
+                )
+                if not file_path:
+                    return
+                if not messagebox.askyesno("确认", f"确定要导出账号 {bot_name} 的数据到:\n{file_path}\n吗？"):
+                    return
+                try:
+                    success, result = OlivaDiceMaster.accountManager.exportAccountData(
+                        bot_hash, OlivaDiceNativeGUI.load.globalProc, file_path
+                    )
+                    
+                    if success:
+                        messagebox.showinfo("成功", result)
+                        self.refresh_account_list()
+                    else:
+                        messagebox.showerror("失败", result)
+                except Exception as e:
+                    messagebox.showerror("错误", f"导出失败：{str(e)}")
+            else:
+                # 多个账号导出
+                # 选择保存目录
+                export_dir = filedialog.askdirectory(
+                    title="选择导出目录",
+                    initialdir='./plugin/export'
                 )
                 
-                if success:
-                    messagebox.showinfo("成功", result)
+                if not export_dir:
+                    return
+                account_names = "\n".join([f"  - {name} ({id})" for hash, name, id in account_list])
+                if not messagebox.askyesno("确认", 
+                    f"确定要导出以下 {len(account_list)} 个账号的数据吗？\n\n账号列表:\n{account_names}\n\n导出目录: {export_dir}"):
+                    return
+                # 依次导出
+                success_count = 0
+                failed_list = []
+                for bot_hash, bot_name, bot_id in account_list:
+                    try:
+                        # 生成导出文件名
+                        export_filename = f"account_export_{bot_hash}.zip"
+                        file_path = os.path.join(export_dir, export_filename)
+                        
+                        success, result = OlivaDiceMaster.accountManager.exportAccountData(
+                            bot_hash, OlivaDiceNativeGUI.load.globalProc, file_path
+                        )
+                        if success:
+                            success_count += 1
+                        else:
+                            display_name = f"{bot_name} ({bot_id})" if bot_id != "-" else f"{bot_name} ({bot_hash[:8]}...)"
+                            failed_list.append(f"{display_name}: {result}")
+                    except Exception as e:
+                        display_name = f"{bot_name} ({bot_id})" if bot_id != "-" else f"{bot_name} ({bot_hash[:8]}...)"
+                        failed_list.append(f"{display_name}: {str(e)}")
+                # 显示结果
+                if success_count == len(account_list):
+                    messagebox.showinfo("成功", f"已成功导出 {success_count} 个账号的数据到:\n{export_dir}")
+                    self.refresh_account_list()
+                elif success_count > 0:
+                    result_msg = f"部分成功：{success_count}/{len(account_list)} 个账号导出成功\n\n导出目录: {export_dir}\n\n"
+                    if failed_list:
+                        result_msg += "失败的账号:\n" + "\n".join(failed_list)
+                    messagebox.showwarning("部分成功", result_msg)
+                    self.refresh_account_list()
                 else:
-                    messagebox.showerror("失败", result)
-            except Exception as e:
-                messagebox.showerror("错误", f"导出失败：{str(e)}")
+                    result_msg = "所有账号导出失败:\n\n" + "\n".join(failed_list)
+                    messagebox.showerror("失败", result_msg)
                 
         except Exception as e:
             messagebox.showerror("错误", f"导出账号数据失败：{str(e)}")
 
     def import_from_zip(self):
-        """从压缩包导入到指定账号（基于选定的账号作为目标）"""
+        """从压缩包导入到指定账号"""
         try:
             # 获取选中的账号作为目标账号
             selection = self.UIObject['tree_account'].selection()
             if not selection:
                 messagebox.showwarning("警告", "请先在账号列表中选择目标账号")
                 return
-            
+            # 检查是否选择了多个账号
+            if len(selection) > 1:
+                messagebox.showwarning("警告", "导入功能仅支持选择单个账号，请只选择一个目标账号")
+                return
             # 获取选中账号的信息
             item = self.UIObject['tree_account'].item(selection[0])
             values = item['values']
-            target_bot_hash = values[3]  # Hash在第4列
-            target_bot_name = values[1]  # 名称在第2列
-            target_bot_id = values[2]    # ID在第3列
-            
+            target_bot_hash = values[3]
+            target_bot_name = values[1]
+            target_bot_id = values[2]
             # 选择压缩包文件
             zip_path = filedialog.askopenfilename(
                 title="选择账号数据压缩包",
@@ -1942,7 +2058,6 @@ class ConfigUI(object):
             
             if not zip_path:
                 return
-            
             # 尝试从文件名自动识别源Hash
             auto_detected_hash = None
             filename = os.path.basename(zip_path)
@@ -1950,18 +2065,14 @@ class ConfigUI(object):
             match = re.match(r'account_(?:export_|import_)?([a-f0-9]+)\.zip', filename, re.IGNORECASE)
             if match:
                 auto_detected_hash = match.group(1)
-            
-            # 创建对话框
             import_zip_window = tkinter.Toplevel(self.UIObject['root'])
             import_zip_window.title('从压缩包导入')
             import_zip_window.geometry('520x380')
             import_zip_window.resizable(False, False)
             import_zip_window.configure(bg = self.UIConfig['color_001'])
-            
             # 显示压缩包信息
             frame_zip_info = tkinter.Frame(import_zip_window, bg = self.UIConfig['color_001'])
             frame_zip_info.pack(pady = (15, 10), fill = tkinter.X, padx = 15)
-            
             label_zip_title = tkinter.Label(
                 frame_zip_info,
                 text = '源压缩包：',
@@ -1970,9 +2081,7 @@ class ConfigUI(object):
                 fg = self.UIConfig['color_004']
             )
             label_zip_title.pack(anchor = 'w')
-            
             zip_info_text = f"  文件: {os.path.basename(zip_path)}\n  路径: {zip_path}"
-            
             label_zip_info = tkinter.Label(
                 frame_zip_info,
                 text = zip_info_text,
@@ -1982,15 +2091,11 @@ class ConfigUI(object):
                 justify = 'left'
             )
             label_zip_info.pack(anchor = 'w', padx = 10)
-            
-            # 分隔线
             separator1 = tkinter.Frame(import_zip_window, height=2, bg = self.UIConfig['color_003'])
             separator1.pack(fill = tkinter.X, padx = 15, pady = 5)
-            
-            # 显示目标账号信息（固定，不可更改）
+            # 显示目标账号信息
             frame_target_info = tkinter.Frame(import_zip_window, bg = self.UIConfig['color_001'])
             frame_target_info.pack(pady = (10, 10), fill = tkinter.X, padx = 15)
-            
             label_target_title = tkinter.Label(
                 frame_target_info,
                 text = '目标账号（已选定）：',
@@ -1999,7 +2104,6 @@ class ConfigUI(object):
                 fg = self.UIConfig['color_004']
             )
             label_target_title.pack(anchor = 'w')
-            
             target_info_text = f"  名称: {target_bot_name}\n  ID: {target_bot_id}\n  Hash: {target_bot_hash}"
             label_target_info = tkinter.Label(
                 frame_target_info,
@@ -2010,15 +2114,11 @@ class ConfigUI(object):
                 justify = 'left'
             )
             label_target_info.pack(anchor = 'w', padx = 10)
-            
-            # 分隔线
             separator2 = tkinter.Frame(import_zip_window, height=2, bg = self.UIConfig['color_003'])
             separator2.pack(fill = tkinter.X, padx = 15, pady = 5)
-            
             # 源账号Hash输入区域
             frame_source_hash = tkinter.Frame(import_zip_window, bg = self.UIConfig['color_001'])
             frame_source_hash.pack(pady = (10, 10), fill = tkinter.X, padx = 15)
-            
             label_source_hash = tkinter.Label(
                 frame_source_hash,
                 text = '源账号Hash:',
@@ -2027,7 +2127,6 @@ class ConfigUI(object):
                 fg = self.UIConfig['color_004']
             )
             label_source_hash.pack(side = tkinter.LEFT, padx = (0, 5))
-            
             source_hash_var = tkinter.StringVar()
             if auto_detected_hash:
                 source_hash_var.set(auto_detected_hash)
@@ -2038,7 +2137,6 @@ class ConfigUI(object):
                 font = ('等线', 9)
             )
             entry_source_hash.pack(side = tkinter.LEFT)
-            
             if not auto_detected_hash:
                 # 如果自动识别失败，显示提示
                 label_hint = tkinter.Label(
@@ -2049,35 +2147,16 @@ class ConfigUI(object):
                     fg = self.UIConfig['color_006']
                 )
                 label_hint.pack(side = tkinter.LEFT, padx = (5, 0))
-            
-            # 按钮
             frame_buttons = tkinter.Frame(import_zip_window, bg = self.UIConfig['color_001'])
             frame_buttons.pack(pady = 15)
-            
             def do_import():
                 source_hash = source_hash_var.get().strip()
-                
                 if not source_hash:
                     messagebox.showwarning("警告", "请输入源账号Hash")
                     return
-                
-                # 验证Hash格式（应该是十六进制字符串）
-                if not re.match(r'^[a-f0-9]+$', source_hash, re.IGNORECASE):
-                    messagebox.showerror("错误", "源账号Hash格式不正确，应为十六进制字符串")
-                    return
-                
-                # 检查账号不能为unity（大小写模糊）
-                if source_hash.lower() == "unity":
-                    messagebox.showerror("错误", "源账号不能为unity")
-                    return
-                if target_bot_hash.lower() == "unity":
-                    messagebox.showerror("错误", "目标账号不能为unity")
-                    return
-                
                 if not messagebox.askyesno("确认", 
                     f"确定要从压缩包导入数据到目标账号吗？\n\n压缩包: {os.path.basename(zip_path)}\n源账号Hash: {source_hash}\n目标账号: {target_bot_name} ({target_bot_id})\nHash: {target_bot_hash}\n\n目标账号的现有数据会被备份"):
                     return
-                
                 try:
                     success, result, auto_hash = OlivaDiceMaster.accountManager.importAccountDataFromZip(
                         zip_path, target_bot_hash, OlivaDiceNativeGUI.load.globalProc, overwrite=False, sourceBotHash=source_hash
