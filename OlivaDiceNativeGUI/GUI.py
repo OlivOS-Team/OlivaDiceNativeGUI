@@ -31,6 +31,7 @@ import traceback
 import threading
 import json
 import importlib
+import datetime
 import re
 
 from PIL import Image
@@ -3363,8 +3364,6 @@ class ConfigUI(object):
             try:
                 if self.key == 'startDate':
                     # 验证日期格式 yyyy-MM-dd
-                    import datetime
-                    import re
                     # 先检查格式是否严格为 yyyy-MM-dd
                     if not re.match(r'^\d{4}-\d{2}-\d{2}$', tmp_new_str):
                         raise ValueError("日期格式必须为 yyyy-MM-dd")
@@ -3378,8 +3377,6 @@ class ConfigUI(object):
                         raise ValueError("天数不能为负数或0")
                 elif self.key == 'backupTime':
                     # 验证时间格式 HH:mm:ss
-                    import datetime
-                    import re
                     # 先检查格式是否严格为 HH:mm:ss（两位数:两位数:两位数）
                     if not re.match(r'^\d{2}:\d{2}:\d{2}$', tmp_new_str):
                         raise ValueError("时间格式必须为 HH:mm:ss")
@@ -3974,8 +3971,6 @@ class ConfigUI(object):
     # 备份配置相关方法
     def get_backup_config_defaults(self):
         """获取备份配置的默认值"""
-        import datetime
-        
         defaults = {}
         
         # startDate 默认为当前日期
@@ -3990,9 +3985,6 @@ class ConfigUI(object):
 
     def validate_backup_config_item(self, key, value):
         """验证单个备份配置项的格式"""
-        import datetime
-        import re
-        
         try:
             if key == 'startDate':
                 # 验证日期格式 yyyy-MM-dd
