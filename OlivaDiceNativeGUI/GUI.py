@@ -176,7 +176,7 @@ class ConfigUI(object):
             try:
                 self.load_backup_config()
             except Exception as e:
-                print(f"警告: 加载备份配置失败: {str(e)}")
+                raise Exception(f"警告: 加载备份配置失败: {str(e)}")
 
         self.init_data_total()
 
@@ -4063,7 +4063,7 @@ class ConfigUI(object):
             try:
                 self.save_backup_config()
             except Exception as e:
-                print(f"警告: 保存清理后的备份配置失败: {str(e)}")
+                raise Exception(f"警告: 保存清理后的备份配置失败: {str(e)}")
         else:
             # 更新到内存中的配置
             OlivaDiceCore.console.dictBackupConfig['unity'].update(cleaned_config)
