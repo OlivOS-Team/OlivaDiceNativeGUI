@@ -1559,7 +1559,10 @@ class ConfigUI(object):
             failed_list = []
             for bot_hash, bot_name, bot_id, display_name, master_list in accounts_to_unlink:
                 try:
-                    success, result = OlivaDiceMaster.accountManager.unlinkAccount(bot_hash)
+                    success, result = OlivaDiceMaster.accountManager.unlinkAccount(
+                        bot_hash, 
+                        bot_info_dict=OlivaDiceNativeGUI.load.dictBotInfo
+                    )
                     if success:
                         success_count += 1
                     else:
