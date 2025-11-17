@@ -176,7 +176,7 @@ class ConfigUI(object):
             try:
                 self.load_backup_config()
             except Exception as e:
-                print(f"警告: 加载备份配置失败: {str(e)}")
+                raise Exception(f"警告: 加载备份配置失败: {str(e)}")
 
         self.init_data_total()
 
@@ -1148,7 +1148,7 @@ class ConfigUI(object):
         # 说明标签
         self.UIObject['label_account_info'] = tkinter.Label(
             self.UIObject['frame_account_root'],
-            text = '多账号连接管理：建立主从关系后，从账号会自动共享主账号的数据\n部分数据（如群开关状态）保持独立，不会被共享\n提示：按住 Ctrl 键可以多选账号',
+            text = '多账号连接管理：建立主从关系后，从账号会自动共享主账号的数据\n部分数据（如群开关状态）保持独立，不会被共享\n注意：一个从账号只能有一个主账号，一个主账号可以对应多个从账号\n提示：按住 Ctrl 键可以多选账号',
             font = ('等线', 10),
             bg = self.UIConfig['color_001'],
             fg = self.UIConfig['color_004'],
@@ -1498,13 +1498,6 @@ class ConfigUI(object):
             if not selection:
                 messagebox.showwarning("警告", "请先在账号列表中选择要断开的账号")
                 return
-            # 获取所有账号关系
-            relations = OlivaDiceCore.console.getAllAccountRelations()
-            master_to_slaves = {}
-            for slave, master in relations.items():
-                if master not in master_to_slaves:
-                    master_to_slaves[master] = []
-                master_to_slaves[master].append(slave)
             # 收集选中的账号信息并分类
             selected_slaves = []
             selected_masters = []
@@ -1517,10 +1510,8 @@ class ConfigUI(object):
                 role = values[0]
                 display_name = f"{bot_name} ({bot_id})" if bot_id != "-" else f"{bot_name} ({bot_hash[:8]}...)"
                 if role == "从账号":
-                    # 是从账号
                     selected_slaves.append((bot_hash, bot_name, bot_id, display_name))
                 elif role == "主账号":
-                    # 是主账号
                     selected_masters.append((bot_hash, bot_name, bot_id, display_name))
             # 不能同时选择主账号和从账号
             if selected_slaves and selected_masters:
@@ -1534,35 +1525,31 @@ class ConfigUI(object):
             # 收集要断开的账号
             accounts_to_unlink = []
             if selected_slaves:
-                slave_masters = {}
                 for slave_hash, bot_name, bot_id, display_name in selected_slaves:
-                    if slave_hash in relations:
-                        master_hash = relations[slave_hash]
-                        if master_hash not in slave_masters:
-                            slave_masters[master_hash] = []
-                        slave_masters[master_hash].append((slave_hash, bot_name, bot_id, display_name))
+                    master_list = OlivaDiceCore.console.getMasterBotHashList(slave_hash)
+                    if master_list:
+                        # 记录从账号及其所有主账号
+                        accounts_to_unlink.append((slave_hash, bot_name, bot_id, display_name, master_list))
                     else:
                         messagebox.showwarning("警告", f"账号 {display_name} 不是从账号，无法断开")
                         return
-                if len(slave_masters) > 1:
-                    master_list = "\n".join([f"  - {master_hash[:8]}... ({len(slaves)} 个从账号)" 
-                                             for master_hash, slaves in slave_masters.items()])
-                    messagebox.showerror("错误", 
-                        f"只能同时断开属于同一个主账号的所有从账号！\n\n您选择了属于 {len(slave_masters)} 个不同主账号的从账号：\n{master_list}\n\n请只选择属于同一个主账号的从账号。")
-                    return
-                accounts_to_unlink = selected_slaves
                 account_type = "从账号"
             else:
-                accounts_to_unlink = selected_masters
+                accounts_to_unlink = [(hash, name, id, display_name, []) for hash, name, id, display_name in selected_masters]
                 account_type = "主账号"
-            
             # 显示确认对话框
             if len(accounts_to_unlink) == 1:
-                hash, name, id, display_name = accounts_to_unlink[0]
-                if not messagebox.askyesno("确认", f"确定要断开账号 {display_name} 的主从关系吗？"):
-                    return
+                hash, name, id, display_name, master_list = accounts_to_unlink[0]
+                if master_list:
+                    # 从账号（只会有一个主账号）
+                    if not messagebox.askyesno("确认", 
+                        f"确定要断开账号 {display_name} 与其主账号的关系吗？"):
+                        return
+                else:
+                    if not messagebox.askyesno("确认", f"确定要断开账号 {display_name} 的主从关系吗？"):
+                        return
             else:
-                account_names = "\n".join([f"  - {display_name}" for hash, name, id, display_name in accounts_to_unlink])
+                account_names = "\n".join([f"  - {display_name}" for hash, name, id, display_name, _ in accounts_to_unlink])
                 if not messagebox.askyesno("确认", 
                     f"确定要断开以下 {len(accounts_to_unlink)} 个{account_type}的主从关系吗？\n\n账号列表:\n{account_names}"):
                     return
@@ -1570,9 +1557,12 @@ class ConfigUI(object):
             # 依次断开连接
             success_count = 0
             failed_list = []
-            for bot_hash, bot_name, bot_id, display_name in accounts_to_unlink:
+            for bot_hash, bot_name, bot_id, display_name, master_list in accounts_to_unlink:
                 try:
-                    success, result = OlivaDiceMaster.accountManager.unlinkAccount(bot_hash)
+                    success, result = OlivaDiceMaster.accountManager.unlinkAccount(
+                        bot_hash, 
+                        bot_info_dict=OlivaDiceNativeGUI.load.dictBotInfo
+                    )
                     if success:
                         success_count += 1
                     else:
@@ -1708,12 +1698,7 @@ class ConfigUI(object):
             for item in self.UIObject['tree_account'].get_children():
                 self.UIObject['tree_account'].delete(item)
             # 获取所有账号和关系
-            relations = OlivaDiceCore.console.getAllAccountRelations()
-            master_to_slaves = {}
-            for slave, master in relations.items():
-                if master not in master_to_slaves:
-                    master_to_slaves[master] = []
-                master_to_slaves[master].append(slave)
+            master_to_slaves = OlivaDiceCore.console.getAllAccountRelations()
             account_list = ['请选择账号']
             self.UIData['account_hash_map'] = {}
             # 先处理所有在dictBotInfo中的账号
@@ -1727,9 +1712,9 @@ class ConfigUI(object):
                 # 判断账号角色
                 role = "独立账号"
                 relation_info = "-"
-                if botHash in relations:
+                masterHash = OlivaDiceCore.console.getMasterBotHash(botHash)
+                if masterHash:
                     role = "从账号"
-                    masterHash = relations[botHash]
                     if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
                         master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
                         master_name = self.get_bot_display_name(masterHash, master_info)
@@ -1746,49 +1731,32 @@ class ConfigUI(object):
                     values = (role, bot_name, bot_id, botHash, relation_info)
                 )
             # 处理未找到的从账号
-            for slave_hash in relations.keys():
-                if slave_hash in OlivaDiceNativeGUI.load.dictBotInfo:
-                    continue
-                bot_name = "未知"
-                bot_id = "-"
-                account_key = f"{bot_name} ({slave_hash[:8]}...)"
-                account_list.append(account_key)
-                self.UIData['account_hash_map'][account_key] = slave_hash
-                # 判断账号角色
-                role = "从账号"
-                relation_info = "-"
-                if slave_hash in relations:
-                    masterHash = relations[slave_hash]
-                    if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
-                        master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
-                        master_name = self.get_bot_display_name(masterHash, master_info)
-                        relation_info = f"→ {master_name} ({masterHash[:8]}...)"
-                    else:
-                        relation_info = f"→ {masterHash[:8]}..."
-                # 检查是否也是主账号
-                if slave_hash in master_to_slaves:
-                    if role == "从账号":
-                        slave_count = len(master_to_slaves[slave_hash])
-                        if slave_hash in relations:
-                            masterHash = relations[slave_hash]
-                            if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
-                                master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
-                                master_name = self.get_bot_display_name(masterHash, master_info)
-                                relation_info = f"→ {master_name} ({masterHash[:8]}...) | ← {slave_count} 个从账号"
-                            else:
-                                relation_info = f"→ {masterHash[:8]}... | ← {slave_count} 个从账号"
+            for master_hash, slave_list in master_to_slaves.items():
+                for slave_hash in slave_list:
+                    if slave_hash in OlivaDiceNativeGUI.load.dictBotInfo:
+                        continue
+                    bot_name = "未知"
+                    bot_id = "-"
+                    account_key = f"{bot_name} ({slave_hash[:8]}...)"
+                    account_list.append(account_key)
+                    self.UIData['account_hash_map'][account_key] = slave_hash
+                    # 判断账号角色
+                    role = "从账号"
+                    relation_info = "-"
+                    masterHash = OlivaDiceCore.console.getMasterBotHash(slave_hash)
+                    if masterHash:
+                        if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
+                            master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
+                            master_name = self.get_bot_display_name(masterHash, master_info)
+                            relation_info = f"→ {master_name} ({masterHash[:8]}...)"
                         else:
-                            relation_info = f"← {slave_count} 个从账号"
-                    else:
-                        role = "主账号"
-                        slave_count = len(master_to_slaves[slave_hash])
-                        relation_info = f"← {slave_count} 个从账号"
-                # 插入到树形列表
-                item_id = self.UIObject['tree_account'].insert(
-                    '',
-                    'end',
-                    values = (role, bot_name, bot_id, slave_hash, relation_info)
-                )
+                            relation_info = f"→ {masterHash[:8]}..."
+                    # 插入到树形列表
+                    item_id = self.UIObject['tree_account'].insert(
+                        '',
+                        'end',
+                        values = (role, bot_name, bot_id, slave_hash, relation_info)
+                    )
             # 更新下拉框
             self.UIObject['combo_master_account']['values'] = tuple(account_list)
             if len(account_list) > 1:
@@ -4098,7 +4066,7 @@ class ConfigUI(object):
             try:
                 self.save_backup_config()
             except Exception as e:
-                print(f"警告: 保存清理后的备份配置失败: {str(e)}")
+                raise Exception(f"警告: 保存清理后的备份配置失败: {str(e)}")
         else:
             # 更新到内存中的配置
             OlivaDiceCore.console.dictBackupConfig['unity'].update(cleaned_config)
