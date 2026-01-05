@@ -69,6 +69,7 @@ dictStrCustomNote = {
     'strBotExit': '【.bot exit】指令\n指令退群时的回复词',
     'strBotExitRemote': '远程指令退群时的回复词（用户侧）',
     'strBotExitRemoteShow' : '远程指令退群时的回复词（骰主侧）',
+    'strBotExitRemoteUnit' : '远程退群时逐个显示已退出的群（骰主侧）',
     'strBotAddFriendNotice': '好友添加时通知窗口的消息',
     'strBotAddGroupNotice' : '群邀请时通知窗口的消息',
     'strBotAddGroupNoticeIgnoreResult' : '群邀请时自动忽略的通知窗口消息片段',
