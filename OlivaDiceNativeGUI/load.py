@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+r"""
 _______________________    _________________________________________
 __  __ \__  /____  _/_ |  / /__    |__  __ \___  _/_  ____/__  ____/
 _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
@@ -10,11 +10,10 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 @Author    :   lunzhiPenxil仑质
 @Contact   :   lunzhipenxil@gmail.com
 @License   :   AGPL
-@Copyright :   (C) 2020-2021, OlivOS-Team
+@Copyright :   (C) 2020-2026, OlivOS-Team
 @Desc      :   None
 """
 
-import OlivOS
 import OlivaDiceNativeGUI
 import OlivaDiceCore
 
@@ -22,7 +21,6 @@ import os
 import json
 import time
 import requests as req
-from urllib.parse import urlencode
 
 flag_open = False
 
@@ -47,7 +45,7 @@ def checkOnlineStatusLoop():
     while True:
         try:
             checkOnlineStatus()
-        except:
+        except Exception:
             pass
         time.sleep(2 * 60 * 60)
 
@@ -64,5 +62,5 @@ def checkOnlineStatus():
         onlineAPIData = tmp_res
         if tmp_res['status'] == 200 and tmp_res['code'] == 0:
             onlineAPICount = str(tmp_res['data']['online']['day'])
-    except:
+    except Exception:
         pass

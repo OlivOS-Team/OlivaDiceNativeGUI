@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+r"""
 _______________________    _________________________________________
 __  __ \__  /____  _/_ |  / /__    |__  __ \___  _/_  ____/__  ____/
 _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
@@ -10,7 +10,7 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 @Author    :   lunzhiPenxil仑质
 @Contact   :   lunzhipenxil@gmail.com
 @License   :   AGPL
-@Copyright :   (C) 2020-2021, OlivOS-Team
+@Copyright :   (C) 2020-2026, OlivOS-Team
 @Desc      :   None
 """
 
@@ -21,7 +21,7 @@ import OlivaDiceOdyssey
 
 try:
     import OlivaDiceMaster
-except:
+except Exception:
     pass
 import base64
 import os
@@ -201,7 +201,6 @@ class ConfigUI(object):
             row=0, column=0, sticky='nsw', rowspan=1, columnspan=1, padx=(15, 0), pady=(15, 0), ipadx=0, ipady=0
         )
         self.UIObject['hash_Combobox_root'].configure(state='readonly')
-        # self.UIObject['hash_Combobox_root'].bind('<<ComboboxSelected>>', lambda x : self.tree_edit_UI_Combobox_ComboboxSelected(x, action, obj_name))
         self.UIData['hash_default'] = 'unity'
         self.UIData['hash_default_key'] = '全局 (不推荐)'
         self.UIData['hash_find'] = {self.UIData['hash_default_key']: self.UIData['hash_default']}
@@ -241,7 +240,7 @@ class ConfigUI(object):
         self.UIData['style'] = ttk.Style(self.UIObject['root'])
         try:
             self.UIData['style'].element_create('Plain.Notebook.tab', 'from', 'default')
-        except:
+        except Exception:
             pass
         self.UIData['style'].layout(
             'TNotebook.Tab',
@@ -1015,7 +1014,12 @@ class ConfigUI(object):
         # 说明标签
         self.UIObject['label_account_info'] = tkinter.Label(
             self.UIObject['frame_account_root'],
-            text='多账号连接管理：建立主从关系后，从账号会自动共享主账号的数据\n部分数据（如群开关状态）保持独立，不会被共享\n注意：一个从账号只能有一个主账号，一个主账号可以对应多个从账号\n提示：按住 Ctrl 键可以多选账号',
+            text=(
+                '多账号连接管理：建立主从关系后，从账号会自动共享主账号的数据'
+                '\n部分数据（如群开关状态）保持独立，不会被共享'
+                '\n注意：一个从账号只能有一个主账号，一个主账号可以对应多个从账号'
+                '\n提示：按住 Ctrl 键可以多选账号'
+            ),
             font=('等线', 10),
             bg=self.UIConfig['color_001'],
             fg=self.UIConfig['color_004'],
@@ -1257,7 +1261,7 @@ class ConfigUI(object):
                 display_text = f'当前选择账号: {bot_name} ({bot_id})'
 
             self.UIObject['label_current_slave'].config(text=display_text)
-        except Exception as e:
+        except Exception:
             self.UIObject['label_current_slave'].config(text='当前选择账号: 未选择')
 
     def link_account(self):
@@ -1319,7 +1323,7 @@ class ConfigUI(object):
             if success_count == len(slave_list):
                 # 全部成功
                 if len(slave_list) == 1:
-                    messagebox.showinfo('成功', f'已成功建立主从关系')
+                    messagebox.showinfo('成功', '已成功建立主从关系')
                 else:
                     messagebox.showinfo('成功', f'已成功为 {success_count} 个账号建立主从关系')
             elif success_count > 0:
@@ -1339,7 +1343,7 @@ class ConfigUI(object):
                     if current_master in values:
                         index = list(values).index(current_master)
                         self.UIObject['combo_master_account'].current(index)
-                except:
+                except Exception:
                     pass
         except Exception as e:
             messagebox.showerror('错误', f'建立主从关系失败：{str(e)}')
@@ -1451,7 +1455,7 @@ class ConfigUI(object):
                     if current_master in values:
                         index = list(values).index(current_master)
                         self.UIObject['combo_master_account'].current(index)
-                except:
+                except Exception:
                     pass
         except Exception as e:
             messagebox.showerror('错误', f'断开主从关系失败：{str(e)}')
@@ -1471,7 +1475,7 @@ class ConfigUI(object):
                 bot_name = res_data['data'].get('name', '未知')
                 if bot_name and bot_name != '未知':
                     return bot_name
-        except:
+        except Exception:
             pass
         # 尝试从用户配置中获取保存的昵称
         try:
@@ -1485,7 +1489,7 @@ class ConfigUI(object):
                 )
                 if saved_name and saved_name != '用户':
                     bot_name = saved_name
-        except:
+        except Exception:
             pass
         return bot_name
 
@@ -1497,7 +1501,7 @@ class ConfigUI(object):
                 self.UIObject['tree_account'].selection_set(item)
                 self.UIObject['tree_account'].focus(item)
                 self.UIObject['menu_account_context'].post(event.x_root, event.y_root)
-        except Exception as e:
+        except Exception:
             pass
 
     def copy_account_hash(self):
@@ -1600,7 +1604,7 @@ class ConfigUI(object):
                         else:
                             relation_info = f'→ {masterHash[:8]}...'
                     # 插入到树形列表
-                    item_id = self.UIObject['tree_account'].insert(
+                    item_id = self.UIObject['tree_account'].insert(  # NOQA: F841
                         '', 'end', values=(role, bot_name, bot_id, slave_hash, relation_info)
                     )
             # 更新下拉框
@@ -1708,7 +1712,10 @@ class ConfigUI(object):
                     return
                 if not messagebox.askyesno(
                     '确认',
-                    f'确定要从源账号导入数据到目标账号吗？\n\n源账号: {account_list[source_idx][0]}\n目标账号: {target_bot_name} ({target_bot_id})\n\n目标账号的现有数据会被备份',
+                    f'确定要从源账号导入数据到目标账号吗？'
+                    f'\n\n源账号: {account_list[source_idx][0]}'
+                    f'\n目标账号: {target_bot_name} ({target_bot_id})'
+                    f'\n\n目标账号的现有数据会被备份',
                 ):
                     return
                 try:
@@ -1976,7 +1983,11 @@ class ConfigUI(object):
                     return
                 if not messagebox.askyesno(
                     '确认',
-                    f'确定要从压缩包导入数据到目标账号吗？\n\n压缩包: {os.path.basename(zip_path)}\n源账号Hash: {source_hash}\n目标账号: {target_bot_name} ({target_bot_id})\nHash: {target_bot_hash}\n\n目标账号的现有数据会被备份',
+                    f'确定要从压缩包导入数据到目标账号吗？'
+                    f'\n\n压缩包: {os.path.basename(zip_path)}'
+                    f'\n源账号Hash: {source_hash}'
+                    f'\n目标账号: {target_bot_name} ({target_bot_id})'
+                    f'\nHash: {target_bot_hash}\n\n目标账号的现有数据会被备份',
                 ):
                     return
                 try:
@@ -2465,7 +2476,7 @@ class ConfigUI(object):
         def reloadDeck_local_fun():
             try:
                 OlivaDiceCore.drawCard.reloadDeck()
-            except:
+            except Exception:
                 pass
             self.init_data_deck_local()
 
@@ -2482,7 +2493,7 @@ class ConfigUI(object):
             try:
                 OlivaDiceOdyssey.webTool.downloadExtiverseDeckRemote(name=deckName, botHash=botHash)
                 OlivaDiceCore.drawCard.reloadDeck()
-            except:
+            except Exception:
                 pass
             self.init_data_deck_local()
 
@@ -2496,7 +2507,7 @@ class ConfigUI(object):
                 OlivaDiceCore.drawCard.removeDeck(botHash=botHash, deckName=deckName)
                 OlivaDiceCore.drawCard.removeDeck(botHash='unity', deckName=deckName)
                 OlivaDiceCore.drawCard.reloadDeck()
-            except Exception as e:
+            except Exception:
                 traceback.print_exc()
             self.init_data_deck_local()
 
@@ -2505,7 +2516,7 @@ class ConfigUI(object):
     def openDeckPath_gen(self, flagUnity=False):
         def openDeckPath_fun():
             botHash = 'unity'
-            deckName = self.UIData['deck_remote_now']
+            deckName = self.UIData['deck_remote_now']  # NOQA: F841
             if flagUnity:
                 botHash = 'unity'
             else:
@@ -2513,7 +2524,7 @@ class ConfigUI(object):
             deck_path = os.path.join('plugin', 'data', 'OlivaDice', botHash, 'extend')
             try:
                 os.startfile(deck_path)
-            except:
+            except Exception:
                 pass
 
         return openDeckPath_fun
@@ -2542,7 +2553,7 @@ class ConfigUI(object):
             # self.init_data_deck_remote_pre()
             try:
                 OlivaDiceOdyssey.webTool.getExtiverseDeckRemote()
-            except:
+            except Exception:
                 self.UIData['label_deck_remote_note_StringVar'].set(
                     value=self.UIData['label_deck_remote_note_StringVar_failed']
                 )
@@ -2605,9 +2616,9 @@ class ConfigUI(object):
         tmp_master_target = self.UIData['entry_master_StringVar'].get()
         try:
             tmp_master_target = int(tmp_master_target)
-        except:
+        except Exception:
             tmp_master_target = None
-        if tmp_platform != None and tmp_master_target != None:
+        if tmp_platform is not None and tmp_master_target is not None:
             tmp_master_target = str(tmp_master_target)
             if action == 'add':
                 tmp_dataList_new = []
@@ -2698,13 +2709,13 @@ class ConfigUI(object):
 
         def quit(self):
             self.save()
-            if self.root_class != None:
+            if self.root_class is not None:
                 self.root_class.init_data_total()
             self.UIObject['root'].destroy()
 
         def save(self):
             tmp_new_str = self.UIObject['entry_edit'].get('1.0', tkinter.END)[:-1]
-            if self.data != None and tmp_new_str != self.data:
+            if self.data is not None and tmp_new_str != self.data:
                 OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[self.hash][self.key] = tmp_new_str
                 OlivaDiceCore.msgCustom.dictStrCustomDict[self.hash][self.key] = tmp_new_str
                 OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(self.hash)
@@ -2850,17 +2861,17 @@ class ConfigUI(object):
 
         def quit(self):
             self.save()
-            if self.root_class != None:
+            if self.root_class is not None:
                 self.root_class.init_data_total()
             self.UIObject['root'].destroy()
 
         def save(self):
             tmp_new_str = self.UIData['entry_edit_StringVar'].get()
-            if self.data != None and tmp_new_str != self.data:
+            if self.data is not None and tmp_new_str != self.data:
                 try:
                     OlivaDiceCore.console.dictConsoleSwitch[self.hash][self.key] = int(tmp_new_str)
                     OlivaDiceCore.console.saveConsoleSwitch()
-                except:
+                except Exception:
                     pass
 
     class edit_backup_UI(object):
@@ -2919,7 +2930,7 @@ class ConfigUI(object):
 
         def quit(self):
             self.save()
-            if self.root_class != None:
+            if self.root_class is not None:
                 self.root_class.init_data_total()
             self.UIObject['root'].destroy()
 
@@ -3037,7 +3048,7 @@ class ConfigUI(object):
                         text=tmp_dictCustomData_this,
                         values=(tmp_dictCustomData_this, tmp_note, tmp_value),
                     )
-                except:
+                except Exception:
                     pass
 
         tmp_tree_item_children = self.UIObject['tree_console'].get_children()
@@ -3047,7 +3058,7 @@ class ConfigUI(object):
             tmp_dictConsoleSwitch = OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection]
             for tmp_dictConsoleSwitch_this in tmp_dictConsoleSwitch:
                 try:
-                    if type(tmp_dictConsoleSwitch[tmp_dictConsoleSwitch_this]) == int:
+                    if type(tmp_dictConsoleSwitch[tmp_dictConsoleSwitch_this]) is int:
                         tmp_value = str(tmp_dictConsoleSwitch[tmp_dictConsoleSwitch_this])
                         tmp_value = tmp_value.replace('\r\n', r'\r\n')
                         tmp_value = tmp_value.replace('\n', r'\n')
@@ -3063,7 +3074,7 @@ class ConfigUI(object):
                             text=tmp_dictConsoleSwitch_this,
                             values=(tmp_dictConsoleSwitch_this, tmp_note, tmp_value),
                         )
-                except:
+                except Exception:
                     pass
 
         # 备份配置树视图更新（只有在有 OlivaDiceMaster 模块时才更新）
@@ -3090,7 +3101,7 @@ class ConfigUI(object):
                             text=tmp_dictBackupConfig_this,
                             values=(tmp_dictBackupConfig_this, tmp_note, tmp_value),
                         )
-                    except:
+                    except Exception:
                         pass
 
         tmp_tree_item_children = self.UIObject['tree_master'].get_children()
@@ -3109,7 +3120,7 @@ class ConfigUI(object):
                 tmp_userId = OlivaDiceCore.userConfig.getUserDataByKeyWithHash(
                     userHash=tmp_userHash, userDataKey='userId', botHash=tmp_botHash
                 )
-                if tmp_userId != None:
+                if tmp_userId is not None:
                     tmp_userName = OlivaDiceCore.userConfig.getUserConfigByKeyWithHash(
                         userHash=tmp_userHash, userConfigKey='userName', botHash=tmp_botHash
                     )
@@ -3120,7 +3131,7 @@ class ConfigUI(object):
                         text=str(tmp_dataList_this[0]),
                         values=(str(tmp_dataList_this[0]), str(tmp_userName)),
                     )
-                except:
+                except Exception:
                     pass
         self.init_data_deck_local()
 
@@ -3139,11 +3150,11 @@ class ConfigUI(object):
             for deckName_this in tmp_dataList[tmp_hashSelection]:
                 try:
                     self.UIObject['tree_deck_local'].insert('', tkinter.END, text=deckName_this, values=(deckName_this))
-                except:
+                except Exception:
                     pass
 
     def init_data_deck_remote_pre(self):
-        tmp_hashSelection = self.UIData['hash_now']
+        tmp_hashSelection = self.UIData['hash_now']  # NOQA: F841
 
         self.UIData['deck_remote_now'] = None
         tmp_tree_item_children = self.UIObject['tree_deck_remote'].get_children()
@@ -3151,7 +3162,7 @@ class ConfigUI(object):
             self.UIObject['tree_deck_remote'].delete(tmp_tree_item_this)
 
     def init_data_deck_remote(self):
-        tmp_hashSelection = self.UIData['hash_now']
+        tmp_hashSelection = self.UIData['hash_now']  # NOQA: F841
 
         self.UIData['deck_remote_now'] = None
         tmp_tree_item_children = self.UIObject['tree_deck_remote'].get_children()
@@ -3172,7 +3183,7 @@ class ConfigUI(object):
                             self.UIObject['tree_deck_remote'].insert(
                                 '', tkinter.END, text=deckName_this, values=(deckName_this, deckAuthor_this)
                             )
-                        except:
+                        except Exception:
                             pass
 
     def reset_str_confirm(self):
@@ -3297,7 +3308,7 @@ class ConfigUI(object):
                 if not isinstance(import_data, dict):
                     raise ValueError('配置文件格式不正确，必须是一个JSON文件')
                 if messagebox.askyesno(
-                    '确认导入', f'确定要导入回复词配置吗？这将覆盖当前配置。', parent=self.UIObject['root']
+                    '确认导入', '确定要导入回复词配置吗？这将覆盖当前配置。', parent=self.UIObject['root']
                 ):
                     tmp_hashSelection = self.UIData['hash_now']
                     backup_data = OlivaDiceCore.msgCustom.dictStrCustomDict.get(tmp_hashSelection, {}).copy()
@@ -3325,7 +3336,7 @@ class ConfigUI(object):
                         OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(tmp_hashSelection)
                         self.init_data_total()
                         messagebox.showinfo('完成', '回复词配置导入成功', parent=self.UIObject['root'])
-                    except Exception as e:
+                    except Exception:
                         OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection] = backup_data
                         OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[tmp_hashSelection] = backup_update
                         self.init_data_total()
@@ -3415,7 +3426,7 @@ class ConfigUI(object):
                     raise ValueError('配置文件格式不正确，必须是一个JSON文件')
 
                 if messagebox.askyesno(
-                    '确认导入', f'确定要导入控制台配置吗？这将覆盖当前配置。', parent=self.UIObject['root']
+                    '确认导入', '确定要导入控制台配置吗？这将覆盖当前配置。', parent=self.UIObject['root']
                 ):
                     tmp_hashSelection = self.UIData['hash_now']
                     current_config = OlivaDiceCore.console.dictConsoleSwitch.get(tmp_hashSelection, {})
@@ -3427,7 +3438,7 @@ class ConfigUI(object):
                         OlivaDiceCore.console.saveConsoleSwitch()
                         self.init_data_total()
                         messagebox.showinfo('完成', '控制台配置导入成功', parent=self.UIObject['root'])
-                    except Exception as e:
+                    except Exception:
                         OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection] = backup_data
                         OlivaDiceCore.console.saveConsoleSwitch()
                         self.init_data_total()
@@ -3671,7 +3682,7 @@ class ConfigUI(object):
                         self.save_backup_config()
                         self.init_data_total()
                         messagebox.showinfo('完成', '备份配置导入成功', parent=self.UIObject['root'])
-                    except Exception as e:
+                    except Exception:
                         OlivaDiceCore.console.dictBackupConfig['unity'] = backup_data
                         self.save_backup_config()
                         self.init_data_total()
@@ -3742,7 +3753,7 @@ class ConfigUI(object):
                 label='恢复/删除', command=lambda: self.reset_selected_backup()
             )
             self.UIObject['tree_rightkey_menu_backup'].post(event.x_root, event.y_root)
-        except:
+        except Exception:
             pass
 
     def tree_backup_edit(self):
@@ -3750,12 +3761,14 @@ class ConfigUI(object):
         tmp_selection = None
         for item in self.UIObject['tree_backup'].selection():
             tmp_selection = self.UIObject['tree_backup'].item(item, 'values')
-        if tmp_selection != None and len(tmp_selection) >= 1:
+        if tmp_selection is not None and len(tmp_selection) >= 1:
             tmp_key = tmp_selection[0]
             if 'unity' in OlivaDiceCore.console.dictBackupConfig:
                 if tmp_key in OlivaDiceCore.console.dictBackupConfig['unity']:
                     tmp_value = OlivaDiceCore.console.dictBackupConfig['unity'][tmp_key]
-                    tmp_edit_backup_UI_obj = self.edit_backup_UI(root_class=self, key=tmp_key, value=tmp_value)
+                    tmp_edit_backup_UI_obj = self.edit_backup_UI(  # NOQA: F841
+                        root_class=self, key=tmp_key, value=tmp_value
+                    )
                 else:
                     messagebox.showwarning('警告', '未找到对应的备份配置项', parent=self.UIObject['root'])
             else:
@@ -3768,7 +3781,7 @@ class ConfigUI(object):
         tmp_selection = None
         for item in self.UIObject['tree_backup'].selection():
             tmp_selection = self.UIObject['tree_backup'].item(item, 'values')
-        if tmp_selection != None and len(tmp_selection) >= 1:
+        if tmp_selection is not None and len(tmp_selection) >= 1:
             tmp_key = tmp_selection[0]
 
             # 获取默认值

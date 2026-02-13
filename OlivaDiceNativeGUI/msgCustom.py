@@ -1,5 +1,5 @@
 # -*- encoding: utf-8 -*-
-"""
+r"""
 _______________________    _________________________________________
 __  __ \__  /____  _/_ |  / /__    |__  __ \___  _/_  ____/__  ____/
 _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
@@ -10,12 +10,9 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 @Author    :   lunzhiPenxil仑质
 @Contact   :   lunzhipenxil@gmail.com
 @License   :   AGPL
-@Copyright :   (C) 2020-2021, OlivOS-Team
+@Copyright :   (C) 2020-2026, OlivOS-Team
 @Desc      :   None
 """
-
-import OlivOS
-import OlivaDiceNativeGUI
 
 dictConsoleSwitchTemplate = {}
 
@@ -33,6 +30,7 @@ dictHelpDocTemp = {}
 
 dictBackupConfig = {}
 
+# flake8: NOQA: E501
 dictStrCustomNote = {
     # OlivaDiceCore
     'strBotName': '机器人的自称',
@@ -529,3 +527,4 @@ dictBackupConfigNote = {
     'backupTime': '进行备份的时间点\n格式：HH:mm:ss\n例如：04:00:00',
     'maxBackupCount': '最大备份数量\n数值类型，必须大于0\n例如：1',
 }
+# flake8: NOQA OFF
