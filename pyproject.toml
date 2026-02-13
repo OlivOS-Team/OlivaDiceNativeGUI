@@ -1,0 +1,30 @@
+[build-system]
+requires = ["setuptools>=63.2.0", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "olivos-plugin-OlivaDiceNativeGUI"
+version = "3.0.47"
+description = "本模块为OlivaDice的传统UI模块，可以对骰子进行简单的可视化设置。"
+readme = "README.md"
+requires-python = ">=3.7"
+authors = [
+    {name = "OlivOS-Team", email = "benzenpenxil@foxmail.com"}
+]
+license = {text = "AGPLv3 License"}
+classifiers = [
+    "License :: OSI Approved :: GNU Affero General Public License v3",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.7",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+]
+
+dependencies = [
+    "olivos",
+]
+
+[project.urls]
+Homepage = "https://wiki.dice.center/"
+Repository = "https://github.com/OlivOS-Team/OlivaDiceNativeGUI"
+Issues = "https://github.com/OlivOS-Team/OlivaDiceNativeGUI/issues"
