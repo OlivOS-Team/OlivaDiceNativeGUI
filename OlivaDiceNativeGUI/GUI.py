@@ -14,29 +14,30 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 @Desc      :   None
 """
 
-import OlivOS
-import OlivaDiceNativeGUI
+import base64
+import datetime
+import importlib
+import json
+import os
+import re
+import threading
+import tkinter
+import traceback
+import webbrowser
+from concurrent.futures import ThreadPoolExecutor
+from tkinter import filedialog, messagebox, ttk
+
 import OlivaDiceCore
 import OlivaDiceOdyssey
+import OlivOS
+from PIL import Image, ImageTk
+
+import OlivaDiceNativeGUI
 
 try:
     import OlivaDiceMaster
 except Exception:
     pass
-import base64
-import os
-import tkinter
-from tkinter import ttk, filedialog, messagebox
-import webbrowser
-import traceback
-import threading
-import json
-import importlib
-import datetime
-import re
-
-from PIL import Image
-from PIL import ImageTk
 
 dictColorContext = {
     'color_001': '#00A0EA',
@@ -1493,6 +1494,22 @@ class ConfigUI(object):
             pass
         return bot_name
 
+    def get_bot_display_names(self, bot_info_dict):
+        """并发获取账号昵称，同一批次内每个账号只请求一次。"""
+        bot_hashes = list(bot_info_dict)
+        if not bot_hashes:
+            return {}
+
+        def fetch_name(bot_hash):
+            try:
+                return bot_hash, self.get_bot_display_name(bot_hash, bot_info_dict[bot_hash])
+            except Exception:
+                return bot_hash, '未知'
+
+        max_workers = min(32, len(bot_hashes))
+        with ThreadPoolExecutor(max_workers=max_workers) as executor:
+            return dict(executor.map(fetch_name, bot_hashes))
+
     def show_account_context_menu(self, event):
         """显示账号列表的右键菜单"""
         try:
@@ -1553,12 +1570,14 @@ class ConfigUI(object):
                 self.UIObject['tree_account'].delete(item)
             # 获取所有账号和关系
             master_to_slaves = OlivaDiceCore.console.getAllAccountRelations()
+            bot_info_dict = OlivaDiceNativeGUI.load.dictBotInfo
+            bot_names = self.get_bot_display_names(bot_info_dict)
             account_list = ['请选择账号']
             self.UIData['account_hash_map'] = {}
             # 先处理所有在dictBotInfo中的账号
-            for botHash in OlivaDiceNativeGUI.load.dictBotInfo:
-                bot_info = OlivaDiceNativeGUI.load.dictBotInfo[botHash]
-                bot_name = self.get_bot_display_name(botHash, bot_info)
+            for botHash in bot_info_dict:
+                bot_info = bot_info_dict[botHash]
+                bot_name = bot_names.get(botHash, '未知')
                 bot_id = str(bot_info.id) if hasattr(bot_info, 'id') and bot_info.id else '未知'
                 account_key = f'{bot_name} ({bot_id})'
                 account_list.append(account_key)
@@ -1569,9 +1588,8 @@ class ConfigUI(object):
                 masterHash = OlivaDiceCore.console.getMasterBotHash(botHash)
                 if masterHash:
                     role = '从账号'
-                    if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
-                        master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
-                        master_name = self.get_bot_display_name(masterHash, master_info)
+                    if masterHash in bot_info_dict:
+                        master_name = bot_names.get(masterHash, '未知')
                         relation_info = f'→ {master_name} ({masterHash[:8]}...)'
                     else:
                         relation_info = f'→ {masterHash[:8]}...'
@@ -1585,7 +1603,7 @@ class ConfigUI(object):
             # 处理未找到的从账号
             for master_hash, slave_list in master_to_slaves.items():
                 for slave_hash in slave_list:
-                    if slave_hash in OlivaDiceNativeGUI.load.dictBotInfo:
+                    if slave_hash in bot_info_dict:
                         continue
                     bot_name = '未知'
                     bot_id = '-'
@@ -1597,9 +1615,8 @@ class ConfigUI(object):
                     relation_info = '-'
                     masterHash = OlivaDiceCore.console.getMasterBotHash(slave_hash)
                     if masterHash:
-                        if masterHash in OlivaDiceNativeGUI.load.dictBotInfo:
-                            master_info = OlivaDiceNativeGUI.load.dictBotInfo[masterHash]
-                            master_name = self.get_bot_display_name(masterHash, master_info)
+                        if masterHash in bot_info_dict:
+                            master_name = bot_names.get(masterHash, '未知')
                             relation_info = f'→ {master_name} ({masterHash[:8]}...)'
                         else:
                             relation_info = f'→ {masterHash[:8]}...'
@@ -1677,11 +1694,13 @@ class ConfigUI(object):
 
             # 获取源账号列表
             account_list = []
-            for botHash in OlivaDiceNativeGUI.load.dictBotInfo:
+            bot_info_dict = OlivaDiceNativeGUI.load.dictBotInfo
+            bot_names = self.get_bot_display_names(bot_info_dict)
+            for botHash in bot_info_dict:
                 if botHash == target_bot_hash:
                     continue
-                bot_info = OlivaDiceNativeGUI.load.dictBotInfo[botHash]
-                bot_name = self.get_bot_display_name(botHash, bot_info)
+                bot_info = bot_info_dict[botHash]
+                bot_name = bot_names.get(botHash, '未知')
                 bot_id = str(bot_info.id) if hasattr(bot_info, 'id') and bot_info.id else '未知'
                 account_key = f'{bot_name} ({bot_id}) - {botHash[:8]}...'
                 account_list.append((account_key, botHash))
