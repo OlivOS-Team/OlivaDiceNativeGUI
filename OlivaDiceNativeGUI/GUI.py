@@ -1574,6 +1574,7 @@ class ConfigUI(object):
             bot_names = self.get_bot_display_names(bot_info_dict)
             account_list = ['请选择账号']
             self.UIData['account_hash_map'] = {}
+            displayed_hashes = set()
             # 先处理所有在dictBotInfo中的账号
             for botHash in bot_info_dict:
                 bot_info = bot_info_dict[botHash]
@@ -1600,10 +1601,27 @@ class ConfigUI(object):
                 item_id = self.UIObject['tree_account'].insert(
                     '', 'end', values=(role, bot_name, bot_id, botHash, relation_info)
                 )
+                displayed_hashes.add(botHash)
+            # 处理关系中存在但当前未启用的主账号
+            for master_hash, slave_list in master_to_slaves.items():
+                if master_hash in displayed_hashes or not isinstance(slave_list, list) or not slave_list:
+                    continue
+                bot_name = '未知'
+                bot_id = '-'
+                account_key = f'{bot_name} ({master_hash[:8]}...)'
+                account_list.append(account_key)
+                self.UIData['account_hash_map'][account_key] = master_hash
+                relation_info = f'← {len(slave_list)} 个从账号'
+                self.UIObject['tree_account'].insert(
+                    '', 'end', values=('主账号', bot_name, bot_id, master_hash, relation_info)
+                )
+                displayed_hashes.add(master_hash)
             # 处理未找到的从账号
             for master_hash, slave_list in master_to_slaves.items():
+                if not isinstance(slave_list, list):
+                    continue
                 for slave_hash in slave_list:
-                    if slave_hash in bot_info_dict:
+                    if slave_hash in displayed_hashes:
                         continue
                     bot_name = '未知'
                     bot_id = '-'
@@ -1624,6 +1642,7 @@ class ConfigUI(object):
                     item_id = self.UIObject['tree_account'].insert(  # NOQA: F841
                         '', 'end', values=(role, bot_name, bot_id, slave_hash, relation_info)
                     )
+                    displayed_hashes.add(slave_hash)
             # 更新下拉框
             self.UIObject['combo_master_account']['values'] = tuple(account_list)
             if len(account_list) > 1:
