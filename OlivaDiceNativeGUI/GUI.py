@@ -60,6 +60,38 @@ def get_tree_force(tree_obj):
     return tree_obj.item(tree_obj.focus())
 
 
+def resolve_host_root():
+    """取宿主（OlivOS 插件进程）提供的 tk 根窗口，取不到时返回 None"""
+    proc = getattr(OlivaDiceNativeGUI.load, 'globalProc', None)
+    getter = getattr(proc, 'get_main_root', None)
+    if getter is None:
+        return None
+    try:
+        return getter()
+    except Exception:
+        return None
+
+
+def create_window(master=None):
+    """创建窗口对象，供本模块所有顶层窗口使用
+
+    优先挂到宿主根窗口，其次挂到已存在的默认根窗口；两者都没有时把自己当作主窗口。
+    不要直接写 tkinter.Toplevel()：_default_root 为空时 tkinter 会隐式创建一个标题为
+    tk 的空白根窗口，本窗口成为它的子窗口——关本窗口它留着，关它本窗口一起消失。
+    宿主仅在 system.proc_mode != 'webUI' 时提供根窗口，因此兜底分支是必需的。
+    """
+    if master is None:
+        master = resolve_host_root()
+    if master is None:
+        master = getattr(tkinter, '_default_root', None)
+    if master is not None:
+        try:
+            return tkinter.Toplevel(master)
+        except tkinter.TclError:
+            pass
+    return tkinter.Tk()
+
+
 class ConfigUI(object):
     def __init__(self, Model_name, logger_proc=None):
         self.Model_name = Model_name
@@ -124,7 +156,7 @@ class ConfigUI(object):
             json.dump({'modules': modules_list}, f, ensure_ascii=False, indent=4)
 
     def start(self):
-        self.UIObject['root'] = tkinter.Toplevel()
+        self.UIObject['root'] = create_window()
         self.UIObject['root'].title('OlivaDice 设置面板')
         self.UIObject['root'].geometry('800x600')
         self.UIObject['root'].minsize(800, 600)
