@@ -465,6 +465,8 @@ dictStrCustomNote = {
     'strMasterSendFromMasterSuccess': '【.send (user/group) [ID]】指令\nMaster向指定用户/群发送消息成功时的回复',
     'strMasterSendFromMasterFailedUser': '【.send user [ID]】指令\nMaster向指定用户发送消息失败时的回复\n通常是没有对方好友或没有权限',
     'strMasterSendFromMasterFailedGroup': '【.send group [ID]】指令\nMaster向指定群发送消息失败时的回复\n通常是不在该群或没有权限',
+    'strMasterSendFromMasterPartialUser': '【.send user [ID]】指令\nMaster向指定用户发送的消息超出分页上限、只发出部分页时的回复',
+    'strMasterSendFromMasterPartialGroup': '【.send group [ID]】指令\nMaster向指定群发送的消息超出分页上限、只发出部分页时的回复',
     'strMasterTrustSet': '【.trust】指令\n设置信任相关设置',
     'strMasterTrustGet': '【.trust】指令\n查看信任相关设置',
     'strMasterPlatformNo': '该功能在此平台不受支持',
