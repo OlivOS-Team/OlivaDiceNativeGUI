@@ -14,8 +14,8 @@ _  / / /_  /  __  / __ | / /__  /| |_  / / /__  / _  /    __  __/
 @Desc      :   None
 """
 
-OlivaDiceNativeGUI_ver = '3.0.64'
-OlivaDiceNativeGUI_svn = 65
+OlivaDiceNativeGUI_ver = '3.0.65'
+OlivaDiceNativeGUI_svn = 66
 OlivaDiceNativeGUI_ver_short = '%s(%s)' % (str(OlivaDiceNativeGUI_ver), str(OlivaDiceNativeGUI_svn))
 
 onlineStatusAPIURL = 'https://api.oliva.icu/info/'
