@@ -25,7 +25,7 @@ import tkinter
 import traceback
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
-from tkinter import filedialog, messagebox, ttk
+from tkinter import filedialog, messagebox, simpledialog, ttk
 
 import OlivaDiceCore
 import OlivaDiceOdyssey
@@ -205,6 +205,7 @@ class ConfigUI(object):
 
         # 回复词
         self.init_frame_str()
+        self.init_frame_censor()
 
         # 配置项
         self.init_frame_console()
@@ -227,6 +228,7 @@ class ConfigUI(object):
         self.UIObject['Notebook_root'].add(self.UIObject['frame_main_root'], text='首页')
         self.UIObject['Notebook_root'].add(self.UIObject['frame_deck_root'], text='牌堆管理')
         self.UIObject['Notebook_root'].add(self.UIObject['frame_str_root'], text='回复词')
+        self.UIObject['Notebook_root'].add(self.UIObject['frame_censor_root'], text='敏感词')
         self.UIObject['Notebook_root'].add(self.UIObject['frame_console_root'], text='配置项')
 
         # 只有在有 OlivaDiceMaster 模块时才显示备份选项卡
@@ -3231,6 +3233,263 @@ class ConfigUI(object):
                 except Exception:
                     pass
         self.init_data_deck_local()
+        self.fill_censor_tree()
+
+    def init_frame_censor(self):
+        """敏感词：全局/分账号增删改查、导入导出，刷新从文件重读。"""
+        root = tkinter.Frame(self.UIObject['Notebook_root'])
+        root.configure(bg=self.UIConfig['color_001'], borderwidth=0)
+        root.grid(row=1, column=0, sticky='nsew')
+        root.grid_rowconfigure(1, weight=15)
+        root.grid_columnconfigure(0, weight=15)
+        self.UIObject['frame_censor_root'] = root
+        self.UIData['censor_query'] = tkinter.StringVar()
+
+        bar = tkinter.Frame(root, bg=self.UIConfig['color_001'])
+        bar.grid(row=0, column=0, columnspan=2, sticky='ew', padx=(15, 15), pady=(8, 8))
+        tkinter.Label(
+            bar, text='查询', bg=self.UIConfig['color_001'], fg=self.UIConfig['color_004']
+        ).pack(side=tkinter.LEFT)
+        tkinter.Entry(bar, textvariable=self.UIData['censor_query'], width=24).pack(
+            side=tkinter.LEFT, padx=(6, 8)
+        )
+        self._censor_button(bar, 'buttom_query_censor', '查询', self.fill_censor_tree).pack(
+            side=tkinter.LEFT, padx=(0, 8)
+        )
+        self.UIData['censor_count_StringVar'] = tkinter.StringVar(value='自定义 0 条')
+        tkinter.Label(
+            bar,
+            textvariable=self.UIData['censor_count_StringVar'],
+            bg=self.UIConfig['color_001'],
+            fg=self.UIConfig['color_004'],
+        ).pack(side=tkinter.LEFT)
+
+        tree = ttk.Treeview(root)
+        tree['show'] = 'headings'
+        tree['columns'] = ('WORD',)
+        tree.column('WORD', width=680)
+        tree.heading('WORD', text='敏感词')
+        tree.grid(row=1, column=0, sticky='nsew')
+        scroll = ttk.Scrollbar(root, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scroll.set)
+        scroll.grid(row=1, column=1, sticky='nsw')
+        self.UIObject['tree_censor'] = tree
+
+        buttons = tkinter.Frame(root, bg=self.UIConfig['color_001'])
+        buttons.grid(row=2, column=0, columnspan=2, sticky='ew', padx=(15, 15), pady=(8, 0))
+        self._censor_button(buttons, 'buttom_add_censor', '添加', self.censor_add).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_edit_censor', '修改', self.censor_edit).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_delete_censor', '删除', self.censor_delete).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_import_censor', '导入敏感词', self.censor_import).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_export_censor', '导出敏感词', self.censor_export).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_reload_censor', '从磁盘刷新', self.censor_reload).pack(
+            side=tkinter.LEFT
+        )
+
+    def _censor_button(self, parent, name, text, command):
+        button = tkinter.Button(
+            parent,
+            text=text,
+            command=command,
+            bd=0,
+            activebackground=self.UIConfig['color_002'],
+            activeforeground=self.UIConfig['color_001'],
+            bg=self.UIConfig['color_003'],
+            fg=self.UIConfig['color_004'],
+            relief='groove',
+            height=2,
+            width=12,
+        )
+        button.bind('<Enter>', lambda x, key=name: self.buttom_action(key, '<Enter>'))
+        button.bind('<Leave>', lambda x, key=name: self.buttom_action(key, '<Leave>'))
+        self.UIObject[name] = button
+        return button
+
+    def _censor_module(self):
+        module = getattr(OlivaDiceCore, 'censorAPI', None)
+        if module is None or not hasattr(module, 'setConfigList'):
+            raise RuntimeError('敏感词接口未加载，请先更新 OlivaDiceCore 并重载插件')
+        return module
+
+    def _censor_words(self):
+        module = getattr(OlivaDiceCore, 'censorAPI', None)
+        if module is None or not hasattr(module, 'getConfigList'):
+            return []
+        words = module.getConfigList(self.UIData['hash_now'])
+        return list(words) if isinstance(words, list) else []
+
+    def fill_censor_tree(self):
+        tree = self.UIObject.get('tree_censor')
+        if tree is None:
+            return
+        query = self.UIData.get('censor_query')
+        needle = query.get().strip().lower() if query is not None else ''
+        for item in tree.get_children():
+            tree.delete(item)
+        shown = 0
+        words = self._censor_words()
+        for word in words:
+            if needle and needle not in str(word).lower():
+                continue
+            tree.insert('', tkinter.END, text=str(word), values=(str(word),))
+            shown += 1
+        if 'censor_count_StringVar' in self.UIData:
+            self.UIData['censor_count_StringVar'].set('自定义 %s 条，显示 %s 条' % (len(words), shown))
+
+    def _selected_censor_word(self):
+        tree = self.UIObject['tree_censor']
+        selected = tree.selection()
+        if not selected:
+            messagebox.showerror('未选择', '请先选择一条敏感词', parent=self.UIObject['root'])
+            return None
+        values = tree.item(selected[0], 'values')
+        return values[0] if values else None
+
+    def _write_censor_words(self, words):
+        module = self._censor_module()
+        bot_hash = self.UIData['hash_now']
+        module.setConfigList(bot_hash, words)
+        if hasattr(module, 'rebuildCensorByHash'):
+            module.rebuildCensorByHash(bot_hash)
+        self.fill_censor_tree()
+
+    def censor_add(self):
+        try:
+            value = simpledialog.askstring('添加敏感词', '输入要添加的敏感词', parent=self.UIObject['root'])
+            if value is None:
+                return
+            module = self._censor_module()
+            word = module.normalizeCensorWord(value)
+            if word is None:
+                raise ValueError('请输入 1 到 64 字的敏感词')
+            words = self._censor_words()
+            if word in words:
+                raise ValueError('这个敏感词已经在列表里了')
+            words.append(word)
+            self._write_censor_words(words)
+        except Exception as error:
+            messagebox.showerror('添加失败', str(error), parent=self.UIObject['root'])
+
+    def censor_edit(self):
+        old = self._selected_censor_word()
+        if old is None:
+            return
+        try:
+            value = simpledialog.askstring(
+                '修改敏感词', '把「%s」改成' % old, initialvalue=old, parent=self.UIObject['root']
+            )
+            if value is None:
+                return
+            module = self._censor_module()
+            word = module.normalizeCensorWord(value)
+            if word is None:
+                raise ValueError('请输入 1 到 64 字的敏感词')
+            words = self._censor_words()
+            if old not in words:
+                raise ValueError('该敏感词不存在，请重新查询')
+            if word != old and word in words:
+                raise ValueError('这个敏感词已经在列表里了')
+            words[words.index(old)] = word
+            self._write_censor_words(words)
+        except Exception as error:
+            messagebox.showerror('修改失败', str(error), parent=self.UIObject['root'])
+
+    def censor_delete(self):
+        word = self._selected_censor_word()
+        if word is None:
+            return
+        if not messagebox.askyesno('确认删除', '确定删除敏感词「%s」吗？' % word, parent=self.UIObject['root']):
+            return
+        try:
+            words = self._censor_words()
+            if word not in words:
+                raise ValueError('该敏感词不存在，请重新查询')
+            words.remove(word)
+            self._write_censor_words(words)
+        except Exception as error:
+            messagebox.showerror('删除失败', str(error), parent=self.UIObject['root'])
+
+    def _load_censor_import(self, file_path):
+        with open(file_path, 'r', encoding='utf-8') as handle:
+            text = handle.read()
+        try:
+            raw = json.loads(text)
+        except json.JSONDecodeError:
+            raw = text
+        if isinstance(raw, list):
+            return raw
+        if isinstance(raw, dict):
+            for key in ('censorList', 'words'):
+                if isinstance(raw.get(key), list):
+                    return raw[key]
+        if isinstance(raw, str):
+            return raw.splitlines()
+        raise ValueError('文件里没有读到敏感词，支持列表、换行文本或 censorList')
+
+    def censor_import(self):
+        file_path = filedialog.askopenfilename(
+            title='选择敏感词文件',
+            filetypes=[('JSON或文本', '*.json *.txt'), ('所有文件', '*.*')],
+            parent=self.UIObject['root'],
+        )
+        if not file_path:
+            return
+        try:
+            incoming = self._load_censor_import(file_path)
+            if not messagebox.askyesno(
+                '确认导入',
+                '将导入 %s 条敏感词，覆盖当前范围的自定义敏感词，继续吗？' % len(incoming),
+                parent=self.UIObject['root'],
+            ):
+                return
+            self._write_censor_words(incoming)
+            messagebox.showinfo('完成', '敏感词导入成功', parent=self.UIObject['root'])
+        except Exception as error:
+            messagebox.showerror('导入失败', '%s\n配置未更改' % error, parent=self.UIObject['root'])
+
+    def censor_reload(self):
+        if not messagebox.askyesno(
+            '确认刷新',
+            '确定要从文件重新加载敏感词吗？这将覆盖当前所有修改。',
+            parent=self.UIObject['root'],
+        ):
+            return
+        try:
+            module = self._censor_module()
+            module.reloadConfigList(self.UIData['hash_now'])
+            if hasattr(module, 'rebuildCensorByHash'):
+                module.rebuildCensorByHash(self.UIData['hash_now'])
+            self.fill_censor_tree()
+            messagebox.showinfo('完成', '敏感词已从文件重新加载', parent=self.UIObject['root'])
+        except Exception as error:
+            messagebox.showerror('刷新失败', str(error) + '，配置未更改', parent=self.UIObject['root'])
+
+    def censor_export(self):
+        file_path = filedialog.asksaveasfilename(
+            title='保存敏感词文件',
+            defaultextension='.json',
+            initialfile='censor.json',
+            filetypes=[('JSON文件', '*.json'), ('所有文件', '*.*')],
+            parent=self.UIObject['root'],
+        )
+        if not file_path:
+            return
+        try:
+            with open(file_path, 'w', encoding='utf-8') as handle:
+                json.dump({'censorList': self._censor_words()}, handle, ensure_ascii=False, indent=4)
+            messagebox.showinfo('完成', '敏感词导出成功', parent=self.UIObject['root'])
+        except Exception as error:
+            messagebox.showerror('导出失败', str(error), parent=self.UIObject['root'])
 
     def init_data_deck(self):
         self.init_data_deck_local()
