@@ -25,7 +25,7 @@ import tkinter
 import traceback
 import webbrowser
 from concurrent.futures import ThreadPoolExecutor
-from tkinter import filedialog, messagebox, simpledialog, ttk
+from tkinter import filedialog, messagebox, ttk
 
 import OlivaDiceCore
 import OlivaDiceOdyssey
@@ -3364,60 +3364,173 @@ class ConfigUI(object):
         self.fill_censor_tree()
 
     def censor_add(self):
-        try:
-            value = simpledialog.askstring('添加敏感词', '输入要添加的敏感词', parent=self.UIObject['root'])
-            if value is None:
-                return
-            module = self._censor_module()
-            word = module.normalizeCensorWord(value)
-            if word is None:
-                raise ValueError('请输入 1 到 64 字的敏感词')
-            words = self._censor_words()
-            if word in words:
-                raise ValueError('这个敏感词已经在列表里了')
-            words.append(word)
-            self._write_censor_words(words)
-        except Exception as error:
-            messagebox.showerror('添加失败', str(error), parent=self.UIObject['root'])
+        self.censor_dialog_UI(self.UIObject['root'], self, 'add').start()
 
     def censor_edit(self):
-        old = self._selected_censor_word()
-        if old is None:
+        word = self._selected_censor_word()
+        if word is None:
             return
-        try:
-            value = simpledialog.askstring(
-                '修改敏感词', '把「%s」改成' % old, initialvalue=old, parent=self.UIObject['root']
-            )
-            if value is None:
-                return
-            module = self._censor_module()
-            word = module.normalizeCensorWord(value)
-            if word is None:
-                raise ValueError('请输入 1 到 64 字的敏感词')
-            words = self._censor_words()
-            if old not in words:
-                raise ValueError('该敏感词不存在，请重新查询')
-            if word != old and word in words:
-                raise ValueError('这个敏感词已经在列表里了')
-            words[words.index(old)] = word
-            self._write_censor_words(words)
-        except Exception as error:
-            messagebox.showerror('修改失败', str(error), parent=self.UIObject['root'])
+        self.censor_dialog_UI(self.UIObject['root'], self, 'edit', word).start()
 
     def censor_delete(self):
         word = self._selected_censor_word()
         if word is None:
             return
-        if not messagebox.askyesno('确认删除', '确定删除敏感词「%s」吗？' % word, parent=self.UIObject['root']):
-            return
-        try:
-            words = self._censor_words()
-            if word not in words:
+        self.censor_dialog_UI(self.UIObject['root'], self, 'delete', word).start()
+
+    class censor_dialog_UI(object):
+        """添加/修改/删除都走和修改回复词同一套顶层窗口，不用系统小弹窗。"""
+
+        def __init__(self, root_obj, root_class, mode, word=''):
+            self.root = root_obj
+            self.root_class = root_class
+            self.mode = mode
+            self.word = word
+            self.UIObject = {}
+            self.UIConfig = {}
+            self.UIConfig.update(dictColorContext)
+            self.done = False
+
+        def start(self):
+            window = create_window(self.root)
+            self.UIObject['root'] = window
+            titles = {'add': '添加敏感词', 'edit': '修改敏感词', 'delete': '删除敏感词'}
+            window.title(titles[self.mode])
+            if self.mode == 'add':
+                window.geometry('520x460')
+                window.minsize(480, 420)
+            elif self.mode == 'edit':
+                window.geometry('400x300')
+                window.minsize(400, 300)
+            else:
+                window.geometry('400x220')
+                window.minsize(400, 220)
+            window.resizable(width=True, height=True)
+            window.grid_rowconfigure(0, weight=0)
+            window.grid_rowconfigure(1, weight=15)
+            window.grid_columnconfigure(0, weight=15)
+            window.configure(bg=self.UIConfig['color_001'])
+            window.protocol('WM_DELETE_WINDOW', self.cancel)
+            notes = {
+                'add': '每行一条敏感词，回车分隔。空行会跳过。',
+                'edit': '把「%s」改成下面的内容。' % self.word,
+                'delete': '确定删除这条敏感词吗？删除后立刻生效。',
+            }
+            label = tkinter.Label(
+                window, text=notes[self.mode], font=('等线', 12, 'bold'), justify='left', anchor='nw'
+            )
+            label.configure(bg=self.UIConfig['color_001'], fg=self.UIConfig['color_004'])
+            label.grid(row=0, column=0, sticky='nsew', padx=(15, 15), pady=(15, 0))
+            if self.mode == 'delete':
+                body = tkinter.Label(
+                    window, text=self.word, font=('等线', 14), justify='left', anchor='nw', wraplength=360
+                )
+                body.configure(bg=self.UIConfig['color_001'], fg=self.UIConfig['color_005'])
+            else:
+                body = tkinter.Text(window, wrap=tkinter.WORD)
+                body.configure(
+                    bg=self.UIConfig['color_004'],
+                    fg=self.UIConfig['color_005'],
+                    bd=0,
+                    font=(None, 12),
+                    padx=8,
+                    pady=8,
+                )
+                if self.mode == 'edit':
+                    body.insert('1.0', self.word)
+            body.grid(row=1, column=0, sticky='nsew', padx=(15, 15), pady=(8, 8))
+            self.UIObject['body'] = body
+            buttons = tkinter.Frame(window, bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            cancel = tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            )
+            cancel.pack(side=tkinter.LEFT, padx=(0, 8))
+            confirm_text = {'add': '添加', 'edit': '保存', 'delete': '删除'}[self.mode]
+            confirm = tkinter.Button(
+                buttons, text=confirm_text, command=self.confirm, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            )
+            confirm.pack(side=tkinter.LEFT)
+            try:
+                window.iconbitmap('./resource/tmp_favoricon.ico')
+            except Exception:
+                pass
+            window.mainloop()
+
+        def cancel(self):
+            if self.UIObject.get('root') is not None:
+                self.UIObject['root'].destroy()
+
+        def confirm(self):
+            if self.done:
+                self.cancel()
+                return
+            try:
+                if self.mode == 'add':
+                    self._confirm_add()
+                elif self.mode == 'edit':
+                    self._confirm_edit()
+                else:
+                    self._confirm_delete()
+            except Exception as error:
+                messagebox.showerror('操作失败', str(error), parent=self.UIObject['root'])
+
+        def _text(self):
+            return self.UIObject['body'].get('1.0', tkinter.END)
+
+        def _confirm_add(self):
+            module = self.root_class._censor_module()
+            report = module.summarizeCensorAdds(self.root_class._censor_words(), self._text().splitlines())
+            if report['total'] == 0:
+                raise ValueError('请输入要添加的敏感词，每行一条')
+            if report['accepted']:
+                merged = list(self.root_class._censor_words()) + report['accepted']
+                self.root_class._write_censor_words(merged)
+            self._show_report(report)
+
+        def _confirm_edit(self):
+            module = self.root_class._censor_module()
+            word = module.normalizeCensorWord(self._text().strip())
+            if word is None:
+                raise ValueError('请输入 1 到 64 字的敏感词')
+            words = self.root_class._censor_words()
+            if self.word not in words:
                 raise ValueError('该敏感词不存在，请重新查询')
-            words.remove(word)
-            self._write_censor_words(words)
-        except Exception as error:
-            messagebox.showerror('删除失败', str(error), parent=self.UIObject['root'])
+            if word != self.word and word in words:
+                raise ValueError('这个敏感词已经在列表里了')
+            words[words.index(self.word)] = word
+            self.root_class._write_censor_words(words)
+            self.cancel()
+
+        def _confirm_delete(self):
+            words = self.root_class._censor_words()
+            if self.word not in words:
+                raise ValueError('该敏感词不存在，请重新查询')
+            words.remove(self.word)
+            self.root_class._write_censor_words(words)
+            self.cancel()
+
+        def _show_report(self, report):
+            self.done = True
+            lines = [
+                '共提交 %s 条' % report['total'],
+                '成功 %s 条' % report['success'],
+                '失败 %s 条' % report['failed'],
+                '',
+            ]
+            if report['failures']:
+                lines.append('失败原因：')
+                for item in report['failures']:
+                    lines.append('第 %s 行「%s」：%s' % (item['line'], item['text'], item['reason']))
+            else:
+                lines.append('没有失败项。')
+            body = self.UIObject['body']
+            body.delete('1.0', tkinter.END)
+            body.insert('1.0', '\n'.join(lines))
+            body.configure(state='disabled')
+            self.UIObject['root'].title('添加结果')
 
     def _load_censor_import(self, file_path):
         with open(file_path, 'r', encoding='utf-8') as handle:
