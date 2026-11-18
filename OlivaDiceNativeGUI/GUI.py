@@ -1857,8 +1857,8 @@ class ConfigUI(object):
                 height=2,
                 width=10,
             )
-            button_cancel.pack(side=tkinter.LEFT, padx=5)
             button_ok.pack(side=tkinter.LEFT, padx=5)
+            button_cancel.pack(side=tkinter.LEFT, padx=5)
 
         except Exception as e:
             messagebox.showerror('错误', f'打开导入对话框失败：{str(e)}')
@@ -2132,8 +2132,8 @@ class ConfigUI(object):
                 height=2,
                 width=10,
             )
-            button_cancel.pack(side=tkinter.LEFT, padx=5)
             button_ok.pack(side=tkinter.LEFT, padx=5)
+            button_cancel.pack(side=tkinter.LEFT, padx=5)
 
         except Exception as e:
             messagebox.showerror('错误', f'打开导入对话框失败：{str(e)}')
