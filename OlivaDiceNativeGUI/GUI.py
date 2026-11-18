@@ -1846,8 +1846,6 @@ class ConfigUI(object):
                 height=2,
                 width=10,
             )
-            button_ok.pack(side=tkinter.LEFT, padx=5)
-
             button_cancel = tkinter.Button(
                 frame_buttons,
                 text='取消',
@@ -1860,6 +1858,7 @@ class ConfigUI(object):
                 width=10,
             )
             button_cancel.pack(side=tkinter.LEFT, padx=5)
+            button_ok.pack(side=tkinter.LEFT, padx=5)
 
         except Exception as e:
             messagebox.showerror('错误', f'打开导入对话框失败：{str(e)}')
@@ -2122,8 +2121,6 @@ class ConfigUI(object):
                 height=2,
                 width=10,
             )
-            button_ok.pack(side=tkinter.LEFT, padx=5)
-
             button_cancel = tkinter.Button(
                 frame_buttons,
                 text='取消',
@@ -2136,6 +2133,7 @@ class ConfigUI(object):
                 width=10,
             )
             button_cancel.pack(side=tkinter.LEFT, padx=5)
+            button_ok.pack(side=tkinter.LEFT, padx=5)
 
         except Exception as e:
             messagebox.showerror('错误', f'打开导入对话框失败：{str(e)}')
@@ -2772,6 +2770,7 @@ class ConfigUI(object):
             self.UIObject['root'].resizable(width=True, height=True)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=15)
+            self.UIObject['root'].grid_rowconfigure(2, weight=0)
             self.UIObject['root'].grid_columnconfigure(0, weight=15)
             self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
 
@@ -2800,20 +2799,28 @@ class ConfigUI(object):
                 bg=self.UIConfig['color_004'], fg=self.UIConfig['color_005'], bd=0, font=(None, 10), padx=4, pady=8
             )
             self.UIObject['entry_edit'].grid(
-                row=1, column=0, sticky='nsew', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 15), ipadx=4, ipady=8
+                row=1, column=0, sticky='nsew', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 8), ipadx=4, ipady=8
             )
             self.UIObject['entry_edit'].insert('1.0', tmp_data)
 
+            buttons = tkinter.Frame(self.UIObject['root'], bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.save, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
             self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
 
-            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.quit)
+            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.cancel)
 
             self.UIObject['root'].mainloop()
 
-        def quit(self):
-            self.save()
-            if self.root_class is not None:
-                self.root_class.init_data_total()
+        def cancel(self):
             self.UIObject['root'].destroy()
 
         def save(self):
@@ -2822,6 +2829,9 @@ class ConfigUI(object):
                 OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[self.hash][self.key] = tmp_new_str
                 OlivaDiceCore.msgCustom.dictStrCustomDict[self.hash][self.key] = tmp_new_str
                 OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(self.hash)
+            if self.root_class is not None:
+                self.root_class.init_data_total()
+            self.cancel()
 
     class edit_modules_UI(object):
         def __init__(self, root_obj, root_class, hash_selection):
@@ -2840,6 +2850,7 @@ class ConfigUI(object):
             self.UIObject['root'].resizable(True, True)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=1)
+            self.UIObject['root'].grid_rowconfigure(2, weight=0)
             self.UIObject['root'].grid_columnconfigure(0, weight=1)
             self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
 
@@ -2875,19 +2886,29 @@ class ConfigUI(object):
                 padx=4,
                 pady=8,
             )
-            self.UIObject['text_modules'].grid(row=1, column=0, padx=15, pady=(0, 15), sticky='nsew')
+            self.UIObject['text_modules'].grid(row=1, column=0, padx=15, pady=(0, 8), sticky='nsew')
 
             # 加载当前模块
             current_modules = self.root_class.load_recover_modules(self.hash)
             self.UIObject['text_modules'].insert('1.0', '\n'.join(current_modules))
 
+            buttons = tkinter.Frame(self.UIObject['root'], bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=15, pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.save, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
             # 绑定关闭事件
-            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.quit)
+            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.cancel)
             self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
             self.UIObject['root'].mainloop()
 
-        def quit(self):
-            self.save()
+        def cancel(self):
             self.UIObject['root'].destroy()
 
         def save(self):
@@ -2896,6 +2917,7 @@ class ConfigUI(object):
             # 按行分割，并移除空行和首尾空格
             modules_list = [line.strip() for line in content.splitlines() if line.strip()]
             self.root_class.save_recover_modules(self.hash, modules_list)
+            self.cancel()
 
     class edit_console_UI(object):
         def __init__(self, root_obj, root_class, key, hash):
@@ -2917,6 +2939,7 @@ class ConfigUI(object):
             self.UIObject['root'].resizable(width=True, height=False)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=15)
+            self.UIObject['root'].grid_rowconfigure(2, weight=0)
             self.UIObject['root'].grid_columnconfigure(0, weight=15)
             self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
 
@@ -2952,20 +2975,28 @@ class ConfigUI(object):
                 # width = width
             )
             self.UIObject['entry_edit'].grid(
-                row=1, column=0, sticky='n', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 15), ipadx=0, ipady=8
+                row=1, column=0, sticky='n', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 8), ipadx=0, ipady=8
             )
             self.UIData['entry_edit_StringVar'].set(tmp_data)
 
+            buttons = tkinter.Frame(self.UIObject['root'], bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.save, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
             self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
 
-            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.quit)
+            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.cancel)
 
             self.UIObject['root'].mainloop()
 
-        def quit(self):
-            self.save()
-            if self.root_class is not None:
-                self.root_class.init_data_total()
+        def cancel(self):
             self.UIObject['root'].destroy()
 
         def save(self):
@@ -2974,8 +3005,12 @@ class ConfigUI(object):
                 try:
                     OlivaDiceCore.console.dictConsoleSwitch[self.hash][self.key] = int(tmp_new_str)
                     OlivaDiceCore.console.saveConsoleSwitch()
-                except Exception:
-                    pass
+                except Exception as error:
+                    messagebox.showerror('保存失败', str(error), parent=self.UIObject['root'])
+                    return
+            if self.root_class is not None:
+                self.root_class.init_data_total()
+            self.cancel()
 
     class edit_backup_UI(object):
         def __init__(self, root_class, key, value):
@@ -2995,6 +3030,7 @@ class ConfigUI(object):
             self.UIObject['root'].resizable(width=True, height=False)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=15)
+            self.UIObject['root'].grid_rowconfigure(2, weight=0)
             self.UIObject['root'].grid_columnconfigure(0, weight=15)
             self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
 
@@ -3023,18 +3059,26 @@ class ConfigUI(object):
                 justify='center',
             )
             self.UIObject['entry_edit'].grid(
-                row=1, column=0, sticky='n', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 15), ipadx=0, ipady=8
+                row=1, column=0, sticky='n', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 8), ipadx=0, ipady=8
             )
             self.UIData['entry_edit_StringVar'].set(str(self.value))
 
+            buttons = tkinter.Frame(self.UIObject['root'], bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.save, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
             self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
-            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.quit)
+            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.cancel)
             self.UIObject['root'].mainloop()
 
-        def quit(self):
-            self.save()
-            if self.root_class is not None:
-                self.root_class.init_data_total()
+        def cancel(self):
             self.UIObject['root'].destroy()
 
         def save(self):
@@ -3108,6 +3152,9 @@ class ConfigUI(object):
                 messagebox.showerror('保存失败', f'保存配置时出错: {str(e)}', parent=self.UIObject['root'])
                 return False
 
+            if self.root_class is not None:
+                self.root_class.init_data_total()
+            self.cancel()
             return True
 
     def init_data_total(self):
@@ -3211,9 +3258,6 @@ class ConfigUI(object):
         entry.pack(side=tkinter.LEFT, padx=(6, 8))
         entry.bind('<KeyRelease>', lambda event: self.fill_censor_tree())
         self.UIObject['entry_censor_query'] = entry
-        self._censor_button(
-            bar, 'buttom_query_censor', '查询', self.fill_censor_tree, height=1, width=8
-        ).pack(side=tkinter.LEFT, padx=(0, 8))
         self.UIData['censor_library'] = tkinter.IntVar()
         self.UIData['censor_file'] = tkinter.StringVar()
         library = tkinter.Checkbutton(
@@ -3377,7 +3421,19 @@ class ConfigUI(object):
         word = self._selected_censor_word()
         if word is None:
             return
-        self.censor_dialog_UI(self.UIObject['root'], self, 'delete', word).start()
+        if not messagebox.askyesno(
+            '确认删除', '确定删除敏感词「%s」吗？删除后立刻生效。' % word,
+            parent=self.UIObject['root'],
+        ):
+            return
+        try:
+            words = self._censor_words()
+            if word not in words:
+                raise ValueError('该敏感词不存在，请重新查询')
+            words.remove(word)
+            self._write_censor_words(words)
+        except Exception as error:
+            messagebox.showerror('删除失败', str(error), parent=self.UIObject['root'])
 
     class censor_dialog_UI(object):
         """添加/修改/删除都走和修改回复词同一套顶层窗口，不用系统小弹窗。"""
@@ -3443,17 +3499,17 @@ class ConfigUI(object):
             self.UIObject['body'] = body
             buttons = tkinter.Frame(window, bg=self.UIConfig['color_001'])
             buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
-            cancel = tkinter.Button(
-                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
-                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
-            )
-            cancel.pack(side=tkinter.LEFT, padx=(0, 8))
             confirm_text = {'add': '添加', 'edit': '保存', 'delete': '删除'}[self.mode]
             confirm = tkinter.Button(
                 buttons, text=confirm_text, command=self.confirm, bd=0, width=10, height=2,
                 bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
             )
             confirm.pack(side=tkinter.LEFT)
+            cancel = tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            )
+            cancel.pack(side=tkinter.LEFT, padx=(8, 0))
             try:
                 window.iconbitmap('./resource/tmp_favoricon.ico')
             except Exception:
@@ -3626,7 +3682,7 @@ class ConfigUI(object):
             self.UIData[other].set(0)
         refresh()
 
-    def _list_filter_bar(self, parent, prefix, refresh):
+    def _list_filter_bar(self, parent, prefix, refresh, with_custom=False):
         bar = tkinter.Frame(parent, bg=self.UIConfig['color_001'])
         bar.grid(row=0, column=0, columnspan=2, sticky='ew', padx=(15, 15), pady=(8, 4))
         tkinter.Label(
@@ -3659,6 +3715,18 @@ class ConfigUI(object):
             activebackground=self.UIConfig['color_001'],
             selectcolor=self.UIConfig['color_003'],
         ).pack(side=tkinter.LEFT)
+        if with_custom:
+            self.UIData[prefix + '_custom_only'] = tkinter.IntVar()
+            tkinter.Checkbutton(
+                bar,
+                text='仅看自定义',
+                variable=self.UIData[prefix + '_custom_only'],
+                command=refresh,
+                bg=self.UIConfig['color_001'],
+                fg=self.UIConfig['color_004'],
+                activebackground=self.UIConfig['color_001'],
+                selectcolor=self.UIConfig['color_003'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
 
     def _reply_defaults(self):
         bot_hash = self.UIData['hash_now']
@@ -3840,9 +3908,12 @@ class ConfigUI(object):
         needle = query.get().strip().lower() if query is not None else ''
         modified_only = self._flag('help_modified_only')
         unmodified_only = self._flag('help_unmodified_only')
+        custom_only = self._flag('help_custom_only')
         for row in self._help_rows():
             blob = '%s %s' % (row['key'], row['value'])
             if needle and needle not in blob.lower():
+                continue
+            if custom_only and not row['custom']:
                 continue
             if not self._status_visible(row['modified'], modified_only, unmodified_only):
                 continue
@@ -3962,7 +4033,7 @@ class ConfigUI(object):
         root.grid_rowconfigure(2, weight=0)
         root.grid_columnconfigure(0, weight=15)
         self.UIObject['frame_help_root'] = root
-        self._list_filter_bar(root, 'help', self.fill_help_tree)
+        self._list_filter_bar(root, 'help', self.fill_help_tree, with_custom=True)
         tree = ttk.Treeview(root)
         tree['show'] = 'headings'
         tree['columns'] = ('KEY', 'STATUS', 'DATA')
@@ -4057,13 +4128,13 @@ class ConfigUI(object):
             buttons = tkinter.Frame(window, bg=self.UIConfig['color_001'])
             buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
             tkinter.Button(
-                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
-                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
-            ).pack(side=tkinter.LEFT, padx=(0, 8))
-            tkinter.Button(
                 buttons, text='保存', command=self.confirm, bd=0, width=10, height=2,
                 bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
             ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
             try:
                 window.iconbitmap('./resource/tmp_favoricon.ico')
             except Exception:
