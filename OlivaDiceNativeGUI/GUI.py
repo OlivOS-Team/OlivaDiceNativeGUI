@@ -205,9 +205,11 @@ class ConfigUI(object):
 
         # 回复词
         self.init_frame_str()
+        self.init_frame_censor()
 
         # 配置项
         self.init_frame_console()
+        self.init_frame_help()
 
         # 备份
         if OlivaDiceNativeGUI.load.masterModelFlag:
@@ -227,7 +229,9 @@ class ConfigUI(object):
         self.UIObject['Notebook_root'].add(self.UIObject['frame_main_root'], text='首页')
         self.UIObject['Notebook_root'].add(self.UIObject['frame_deck_root'], text='牌堆管理')
         self.UIObject['Notebook_root'].add(self.UIObject['frame_str_root'], text='回复词')
+        self.UIObject['Notebook_root'].add(self.UIObject['frame_censor_root'], text='敏感词')
         self.UIObject['Notebook_root'].add(self.UIObject['frame_console_root'], text='配置项')
+        self.UIObject['Notebook_root'].add(self.UIObject['frame_help_root'], text='帮助文档')
 
         # 只有在有 OlivaDiceMaster 模块时才显示备份选项卡
         if OlivaDiceNativeGUI.load.masterModelFlag:
@@ -565,6 +569,7 @@ class ConfigUI(object):
         self.UIObject['frame_str_root'].grid_columnconfigure(0, weight=15)
         self.UIObject['frame_str_root'].grid_columnconfigure(1, weight=0)
         self.UIObject['frame_str_root'].configure(bg=self.UIConfig['color_001'], borderwidth=0)
+        self._list_filter_bar(self.UIObject['frame_str_root'], 'str', self.fill_str_tree)
 
         self.UIObject['tree_str'] = ttk.Treeview(self.UIObject['frame_str_root'])
         self.UIObject['tree_str']['show'] = 'headings'
@@ -736,6 +741,7 @@ class ConfigUI(object):
         self.UIObject['frame_console_root'].grid_rowconfigure(2, weight=0)
         self.UIObject['frame_console_root'].grid_columnconfigure(0, weight=15)
         self.UIObject['frame_console_root'].configure(bg=self.UIConfig['color_001'], borderwidth=0)
+        self._list_filter_bar(self.UIObject['frame_console_root'], 'console', self.fill_console_tree)
 
         self.UIObject['tree_console'] = ttk.Treeview(self.UIObject['frame_console_root'])
         self.UIObject['tree_console']['show'] = 'headings'
@@ -1840,8 +1846,6 @@ class ConfigUI(object):
                 height=2,
                 width=10,
             )
-            button_ok.pack(side=tkinter.LEFT, padx=5)
-
             button_cancel = tkinter.Button(
                 frame_buttons,
                 text='取消',
@@ -1853,6 +1857,7 @@ class ConfigUI(object):
                 height=2,
                 width=10,
             )
+            button_ok.pack(side=tkinter.LEFT, padx=5)
             button_cancel.pack(side=tkinter.LEFT, padx=5)
 
         except Exception as e:
@@ -2116,8 +2121,6 @@ class ConfigUI(object):
                 height=2,
                 width=10,
             )
-            button_ok.pack(side=tkinter.LEFT, padx=5)
-
             button_cancel = tkinter.Button(
                 frame_buttons,
                 text='取消',
@@ -2129,6 +2132,7 @@ class ConfigUI(object):
                 height=2,
                 width=10,
             )
+            button_ok.pack(side=tkinter.LEFT, padx=5)
             button_cancel.pack(side=tkinter.LEFT, padx=5)
 
         except Exception as e:
@@ -2766,6 +2770,7 @@ class ConfigUI(object):
             self.UIObject['root'].resizable(width=True, height=True)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=15)
+            self.UIObject['root'].grid_rowconfigure(2, weight=0)
             self.UIObject['root'].grid_columnconfigure(0, weight=15)
             self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
 
@@ -2794,20 +2799,28 @@ class ConfigUI(object):
                 bg=self.UIConfig['color_004'], fg=self.UIConfig['color_005'], bd=0, font=(None, 10), padx=4, pady=8
             )
             self.UIObject['entry_edit'].grid(
-                row=1, column=0, sticky='nsew', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 15), ipadx=4, ipady=8
+                row=1, column=0, sticky='nsew', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 8), ipadx=4, ipady=8
             )
             self.UIObject['entry_edit'].insert('1.0', tmp_data)
 
+            buttons = tkinter.Frame(self.UIObject['root'], bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.save, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
             self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
 
-            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.quit)
+            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.cancel)
 
             self.UIObject['root'].mainloop()
 
-        def quit(self):
-            self.save()
-            if self.root_class is not None:
-                self.root_class.init_data_total()
+        def cancel(self):
             self.UIObject['root'].destroy()
 
         def save(self):
@@ -2816,6 +2829,9 @@ class ConfigUI(object):
                 OlivaDiceCore.msgCustom.dictStrCustomUpdateDict[self.hash][self.key] = tmp_new_str
                 OlivaDiceCore.msgCustom.dictStrCustomDict[self.hash][self.key] = tmp_new_str
                 OlivaDiceCore.msgCustomManager.saveMsgCustomByBotHash(self.hash)
+            if self.root_class is not None:
+                self.root_class.init_data_total()
+            self.cancel()
 
     class edit_modules_UI(object):
         def __init__(self, root_obj, root_class, hash_selection):
@@ -2834,6 +2850,7 @@ class ConfigUI(object):
             self.UIObject['root'].resizable(True, True)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=1)
+            self.UIObject['root'].grid_rowconfigure(2, weight=0)
             self.UIObject['root'].grid_columnconfigure(0, weight=1)
             self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
 
@@ -2869,19 +2886,29 @@ class ConfigUI(object):
                 padx=4,
                 pady=8,
             )
-            self.UIObject['text_modules'].grid(row=1, column=0, padx=15, pady=(0, 15), sticky='nsew')
+            self.UIObject['text_modules'].grid(row=1, column=0, padx=15, pady=(0, 8), sticky='nsew')
 
             # 加载当前模块
             current_modules = self.root_class.load_recover_modules(self.hash)
             self.UIObject['text_modules'].insert('1.0', '\n'.join(current_modules))
 
+            buttons = tkinter.Frame(self.UIObject['root'], bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=15, pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.save, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
             # 绑定关闭事件
-            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.quit)
+            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.cancel)
             self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
             self.UIObject['root'].mainloop()
 
-        def quit(self):
-            self.save()
+        def cancel(self):
             self.UIObject['root'].destroy()
 
         def save(self):
@@ -2890,6 +2917,7 @@ class ConfigUI(object):
             # 按行分割，并移除空行和首尾空格
             modules_list = [line.strip() for line in content.splitlines() if line.strip()]
             self.root_class.save_recover_modules(self.hash, modules_list)
+            self.cancel()
 
     class edit_console_UI(object):
         def __init__(self, root_obj, root_class, key, hash):
@@ -2911,6 +2939,7 @@ class ConfigUI(object):
             self.UIObject['root'].resizable(width=True, height=False)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=15)
+            self.UIObject['root'].grid_rowconfigure(2, weight=0)
             self.UIObject['root'].grid_columnconfigure(0, weight=15)
             self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
 
@@ -2946,20 +2975,28 @@ class ConfigUI(object):
                 # width = width
             )
             self.UIObject['entry_edit'].grid(
-                row=1, column=0, sticky='n', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 15), ipadx=0, ipady=8
+                row=1, column=0, sticky='n', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 8), ipadx=0, ipady=8
             )
             self.UIData['entry_edit_StringVar'].set(tmp_data)
 
+            buttons = tkinter.Frame(self.UIObject['root'], bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.save, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
             self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
 
-            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.quit)
+            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.cancel)
 
             self.UIObject['root'].mainloop()
 
-        def quit(self):
-            self.save()
-            if self.root_class is not None:
-                self.root_class.init_data_total()
+        def cancel(self):
             self.UIObject['root'].destroy()
 
         def save(self):
@@ -2968,8 +3005,12 @@ class ConfigUI(object):
                 try:
                     OlivaDiceCore.console.dictConsoleSwitch[self.hash][self.key] = int(tmp_new_str)
                     OlivaDiceCore.console.saveConsoleSwitch()
-                except Exception:
-                    pass
+                except Exception as error:
+                    messagebox.showerror('保存失败', str(error), parent=self.UIObject['root'])
+                    return
+            if self.root_class is not None:
+                self.root_class.init_data_total()
+            self.cancel()
 
     class edit_backup_UI(object):
         def __init__(self, root_class, key, value):
@@ -2989,6 +3030,7 @@ class ConfigUI(object):
             self.UIObject['root'].resizable(width=True, height=False)
             self.UIObject['root'].grid_rowconfigure(0, weight=0)
             self.UIObject['root'].grid_rowconfigure(1, weight=15)
+            self.UIObject['root'].grid_rowconfigure(2, weight=0)
             self.UIObject['root'].grid_columnconfigure(0, weight=15)
             self.UIObject['root'].configure(bg=self.UIConfig['color_001'])
 
@@ -3017,18 +3059,26 @@ class ConfigUI(object):
                 justify='center',
             )
             self.UIObject['entry_edit'].grid(
-                row=1, column=0, sticky='n', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 15), ipadx=0, ipady=8
+                row=1, column=0, sticky='n', rowspan=1, columnspan=1, padx=(15, 15), pady=(8, 8), ipadx=0, ipady=8
             )
             self.UIData['entry_edit_StringVar'].set(str(self.value))
 
+            buttons = tkinter.Frame(self.UIObject['root'], bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.save, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
             self.UIObject['root'].iconbitmap('./resource/tmp_favoricon.ico')
-            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.quit)
+            self.UIObject['root'].protocol('WM_DELETE_WINDOW', self.cancel)
             self.UIObject['root'].mainloop()
 
-        def quit(self):
-            self.save()
-            if self.root_class is not None:
-                self.root_class.init_data_total()
+        def cancel(self):
             self.UIObject['root'].destroy()
 
         def save(self):
@@ -3102,6 +3152,9 @@ class ConfigUI(object):
                 messagebox.showerror('保存失败', f'保存配置时出错: {str(e)}', parent=self.UIObject['root'])
                 return False
 
+            if self.root_class is not None:
+                self.root_class.init_data_total()
+            self.cancel()
             return True
 
     def init_data_total(self):
@@ -3123,56 +3176,9 @@ class ConfigUI(object):
 
         self.UIData['onlineStatus_Label_root_StringVar'].set('当前在线: %s' % OlivaDiceNativeGUI.load.onlineAPICount)
 
-        tmp_tree_item_children = self.UIObject['tree_str'].get_children()
-        for tmp_tree_item_this in tmp_tree_item_children:
-            self.UIObject['tree_str'].delete(tmp_tree_item_this)
-        if tmp_hashSelection in OlivaDiceCore.msgCustom.dictStrCustomDict:
-            tmp_dictStrCustomDict = OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection]
-            for tmp_dictCustomData_this in OlivaDiceCore.msgCustom.dictStrCustomDict[tmp_hashSelection]:
-                try:
-                    tmp_value = tmp_dictStrCustomDict[tmp_dictCustomData_this]
-                    tmp_value = tmp_value.replace('\r\n', r'\r\n')
-                    tmp_value = tmp_value.replace('\n', r'\n')
-                    tmp_value = tmp_value.replace('\r', r'\r')
-                    tmp_note = ''
-                    if tmp_dictCustomData_this in OlivaDiceNativeGUI.msgCustom.dictStrCustomNote:
-                        tmp_note = OlivaDiceNativeGUI.msgCustom.dictStrCustomNote[tmp_dictCustomData_this]
-                    tmp_note = tmp_note.replace('\n', ' ')
-                    tmp_note = tmp_note.replace('\r', ' ')
-                    self.UIObject['tree_str'].insert(
-                        '',
-                        tkinter.END,
-                        text=tmp_dictCustomData_this,
-                        values=(tmp_dictCustomData_this, tmp_note, tmp_value),
-                    )
-                except Exception:
-                    pass
-
-        tmp_tree_item_children = self.UIObject['tree_console'].get_children()
-        for tmp_tree_item_this in tmp_tree_item_children:
-            self.UIObject['tree_console'].delete(tmp_tree_item_this)
-        if tmp_hashSelection in OlivaDiceCore.console.dictConsoleSwitch:
-            tmp_dictConsoleSwitch = OlivaDiceCore.console.dictConsoleSwitch[tmp_hashSelection]
-            for tmp_dictConsoleSwitch_this in tmp_dictConsoleSwitch:
-                try:
-                    if type(tmp_dictConsoleSwitch[tmp_dictConsoleSwitch_this]) is int:
-                        tmp_value = str(tmp_dictConsoleSwitch[tmp_dictConsoleSwitch_this])
-                        tmp_value = tmp_value.replace('\r\n', r'\r\n')
-                        tmp_value = tmp_value.replace('\n', r'\n')
-                        tmp_value = tmp_value.replace('\r', r'\r')
-                        tmp_note = ''
-                        if tmp_dictConsoleSwitch_this in OlivaDiceNativeGUI.msgCustom.dictConsoleSwitchNote:
-                            tmp_note = OlivaDiceNativeGUI.msgCustom.dictConsoleSwitchNote[tmp_dictConsoleSwitch_this]
-                        tmp_note = tmp_note.replace('\n', ' ')
-                        tmp_note = tmp_note.replace('\r', ' ')
-                        self.UIObject['tree_console'].insert(
-                            '',
-                            tkinter.END,
-                            text=tmp_dictConsoleSwitch_this,
-                            values=(tmp_dictConsoleSwitch_this, tmp_note, tmp_value),
-                        )
-                except Exception:
-                    pass
+        self.fill_str_tree()
+        self.fill_console_tree()
+        self.fill_help_tree()
 
         # 备份配置树视图更新（只有在有 OlivaDiceMaster 模块时才更新）
         if OlivaDiceNativeGUI.load.masterModelFlag and 'tree_backup' in self.UIObject:
@@ -3231,6 +3237,924 @@ class ConfigUI(object):
                 except Exception:
                     pass
         self.init_data_deck_local()
+        self.fill_censor_tree()
+
+    def init_frame_censor(self):
+        """敏感词：全局/分账号增删改查、导入导出，刷新从文件重读。"""
+        root = tkinter.Frame(self.UIObject['Notebook_root'])
+        root.configure(bg=self.UIConfig['color_001'], borderwidth=0)
+        root.grid(row=1, column=0, sticky='nsew')
+        root.grid_rowconfigure(1, weight=15)
+        root.grid_columnconfigure(0, weight=15)
+        self.UIObject['frame_censor_root'] = root
+        self.UIData['censor_query'] = tkinter.StringVar()
+
+        bar = tkinter.Frame(root, bg=self.UIConfig['color_001'])
+        bar.grid(row=0, column=0, columnspan=2, sticky='ew', padx=(15, 15), pady=(8, 8))
+        tkinter.Label(
+            bar, text='查询', bg=self.UIConfig['color_001'], fg=self.UIConfig['color_004']
+        ).pack(side=tkinter.LEFT)
+        entry = tkinter.Entry(bar, textvariable=self.UIData['censor_query'], width=24)
+        entry.pack(side=tkinter.LEFT, padx=(6, 8))
+        entry.bind('<KeyRelease>', lambda event: self.fill_censor_tree())
+        self.UIObject['entry_censor_query'] = entry
+        self.UIData['censor_library'] = tkinter.IntVar()
+        self.UIData['censor_file'] = tkinter.StringVar()
+        library = tkinter.Checkbutton(
+            bar,
+            text='文本库',
+            variable=self.UIData['censor_library'],
+            command=self._toggle_censor_library,
+            bg=self.UIConfig['color_001'],
+            fg=self.UIConfig['color_004'],
+            activebackground=self.UIConfig['color_001'],
+            selectcolor=self.UIConfig['color_003'],
+        )
+        self.UIObject['check_censor_library'] = library
+        combo = ttk.Combobox(
+            bar, textvariable=self.UIData['censor_file'], width=18, state='readonly'
+        )
+        combo.bind('<<ComboboxSelected>>', lambda event: self.fill_censor_tree())
+        self.UIObject['combo_censor_file'] = combo
+        self.UIData['censor_count_StringVar'] = tkinter.StringVar(value='自定义 0 条')
+        tkinter.Label(
+            bar,
+            textvariable=self.UIData['censor_count_StringVar'],
+            bg=self.UIConfig['color_001'],
+            fg=self.UIConfig['color_004'],
+        ).pack(side=tkinter.LEFT)
+
+        tree = ttk.Treeview(root)
+        tree['show'] = 'headings'
+        tree['columns'] = ('WORD',)
+        tree.column('WORD', width=680)
+        tree.heading('WORD', text='敏感词')
+        tree.grid(row=1, column=0, sticky='nsew')
+        scroll = ttk.Scrollbar(root, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scroll.set)
+        scroll.grid(row=1, column=1, sticky='nsw')
+        self.UIObject['tree_censor'] = tree
+
+        buttons = tkinter.Frame(root, bg=self.UIConfig['color_001'])
+        buttons.grid(row=2, column=0, columnspan=2, sticky='ew', padx=(15, 15), pady=(8, 0))
+        self._censor_button(buttons, 'buttom_add_censor', '添加', self.censor_add).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_edit_censor', '修改', self.censor_edit).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_delete_censor', '删除', self.censor_delete).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_import_censor', '导入敏感词', self.censor_import).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_export_censor', '导出敏感词', self.censor_export).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._censor_button(buttons, 'buttom_reload_censor', '从磁盘刷新', self.censor_reload).pack(
+            side=tkinter.LEFT
+        )
+
+    def _censor_button(self, parent, name, text, command, height=2, width=12):
+        button = tkinter.Button(
+            parent,
+            text=text,
+            command=command,
+            bd=0,
+            activebackground=self.UIConfig['color_002'],
+            activeforeground=self.UIConfig['color_001'],
+            bg=self.UIConfig['color_003'],
+            fg=self.UIConfig['color_004'],
+            relief='groove',
+            height=height,
+            width=width,
+        )
+        button.bind('<Enter>', lambda x, key=name: self.buttom_action(key, '<Enter>'))
+        button.bind('<Leave>', lambda x, key=name: self.buttom_action(key, '<Leave>'))
+        self.UIObject[name] = button
+        return button
+
+    def _censor_module(self):
+        module = getattr(OlivaDiceCore, 'censorAPI', None)
+        if module is None or not hasattr(module, 'setConfigList'):
+            raise RuntimeError('敏感词接口未加载，请先更新 OlivaDiceCore 并重载插件')
+        return module
+
+    def _censor_words(self):
+        module = getattr(OlivaDiceCore, 'censorAPI', None)
+        if module is None or not hasattr(module, 'getConfigList'):
+            return []
+        words = module.getConfigList(self.UIData['hash_now'])
+        return list(words) if isinstance(words, list) else []
+
+    def fill_censor_tree(self):
+        tree = self.UIObject.get('tree_censor')
+        if tree is None:
+            return
+        query = self.UIData.get('censor_query')
+        needle = query.get().strip().lower() if query is not None else ''
+        files = self._censor_files()
+        self._sync_censor_library(files)
+        library = self._flag('censor_library') and bool(files)
+        for item in tree.get_children():
+            tree.delete(item)
+        shown = 0
+        if library:
+            selected = self.UIData['censor_file'].get()
+            current = next((item for item in files if item.get('name') == selected), files[0])
+            lines = current.get('lines') if isinstance(current, dict) else []
+            tree.heading('WORD', text='文本库内容（只读）')
+            for line in lines if isinstance(lines, list) else []:
+                text = line if isinstance(line, str) and line.strip() else '（空行）'
+                if needle and needle not in text.lower():
+                    continue
+                tree.insert('', tkinter.END, text=text, values=(text,))
+                shown += 1
+            label = '文本库 %s，%s 行，显示 %s 行' % (current.get('name'), len(lines), shown)
+        else:
+            tree.heading('WORD', text='敏感词')
+            words = self._censor_words()
+            for word in words:
+                if needle and needle not in str(word).lower():
+                    continue
+                tree.insert('', tkinter.END, text=str(word), values=(str(word),))
+                shown += 1
+            label = '自定义 %s 条，显示 %s 条' % (len(words), shown)
+        if 'censor_count_StringVar' in self.UIData:
+            self.UIData['censor_count_StringVar'].set(label)
+        state = tkinter.DISABLED if library else tkinter.NORMAL
+        for name in (
+            'buttom_add_censor', 'buttom_edit_censor', 'buttom_delete_censor',
+            'buttom_import_censor', 'buttom_export_censor',
+        ):
+            if name in self.UIObject:
+                self.UIObject[name].config(state=state)
+
+    def _selected_censor_word(self):
+        tree = self.UIObject['tree_censor']
+        selected = tree.selection()
+        if not selected:
+            messagebox.showerror('未选择', '请先选择一条敏感词', parent=self.UIObject['root'])
+            return None
+        values = tree.item(selected[0], 'values')
+        return values[0] if values else None
+
+    def _write_censor_words(self, words):
+        module = self._censor_module()
+        bot_hash = self.UIData['hash_now']
+        module.setConfigList(bot_hash, words)
+        if hasattr(module, 'rebuildCensorByHash'):
+            module.rebuildCensorByHash(bot_hash)
+        self.fill_censor_tree()
+
+    def censor_add(self):
+        self.censor_dialog_UI(self.UIObject['root'], self, 'add').start()
+
+    def censor_edit(self):
+        word = self._selected_censor_word()
+        if word is None:
+            return
+        self.censor_dialog_UI(self.UIObject['root'], self, 'edit', word).start()
+
+    def censor_delete(self):
+        word = self._selected_censor_word()
+        if word is None:
+            return
+        if not messagebox.askyesno(
+            '确认删除', '确定删除敏感词「%s」吗？删除后立刻生效。' % word,
+            parent=self.UIObject['root'],
+        ):
+            return
+        try:
+            words = self._censor_words()
+            if word not in words:
+                raise ValueError('该敏感词不存在，请重新查询')
+            words.remove(word)
+            self._write_censor_words(words)
+        except Exception as error:
+            messagebox.showerror('删除失败', str(error), parent=self.UIObject['root'])
+
+    class censor_dialog_UI(object):
+        """添加/修改/删除都走和修改回复词同一套顶层窗口，不用系统小弹窗。"""
+
+        def __init__(self, root_obj, root_class, mode, word=''):
+            self.root = root_obj
+            self.root_class = root_class
+            self.mode = mode
+            self.word = word
+            self.UIObject = {}
+            self.UIConfig = {}
+            self.UIConfig.update(dictColorContext)
+            self.done = False
+
+        def start(self):
+            window = create_window(self.root)
+            self.UIObject['root'] = window
+            titles = {'add': '添加敏感词', 'edit': '修改敏感词', 'delete': '删除敏感词'}
+            window.title(titles[self.mode])
+            if self.mode == 'add':
+                window.geometry('520x460')
+                window.minsize(480, 420)
+            elif self.mode == 'edit':
+                window.geometry('400x300')
+                window.minsize(400, 300)
+            else:
+                window.geometry('400x220')
+                window.minsize(400, 220)
+            window.resizable(width=True, height=True)
+            window.grid_rowconfigure(0, weight=0)
+            window.grid_rowconfigure(1, weight=15)
+            window.grid_columnconfigure(0, weight=15)
+            window.configure(bg=self.UIConfig['color_001'])
+            window.protocol('WM_DELETE_WINDOW', self.cancel)
+            notes = {
+                'add': '每行一条敏感词，回车分隔。空行会跳过。',
+                'edit': '把「%s」改成下面的内容。' % self.word,
+                'delete': '确定删除这条敏感词吗？删除后立刻生效。',
+            }
+            label = tkinter.Label(
+                window, text=notes[self.mode], font=('等线', 12, 'bold'), justify='left', anchor='nw'
+            )
+            label.configure(bg=self.UIConfig['color_001'], fg=self.UIConfig['color_004'])
+            label.grid(row=0, column=0, sticky='nsew', padx=(15, 15), pady=(15, 0))
+            if self.mode == 'delete':
+                body = tkinter.Label(
+                    window, text=self.word, font=('等线', 14), justify='left', anchor='nw', wraplength=360
+                )
+                body.configure(bg=self.UIConfig['color_001'], fg=self.UIConfig['color_005'])
+            else:
+                body = tkinter.Text(window, wrap=tkinter.WORD)
+                body.configure(
+                    bg=self.UIConfig['color_004'],
+                    fg=self.UIConfig['color_005'],
+                    bd=0,
+                    font=(None, 12),
+                    padx=8,
+                    pady=8,
+                )
+                if self.mode == 'edit':
+                    body.insert('1.0', self.word)
+            body.grid(row=1, column=0, sticky='nsew', padx=(15, 15), pady=(8, 8))
+            self.UIObject['body'] = body
+            buttons = tkinter.Frame(window, bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            confirm_text = {'add': '添加', 'edit': '保存', 'delete': '删除'}[self.mode]
+            confirm = tkinter.Button(
+                buttons, text=confirm_text, command=self.confirm, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            )
+            confirm.pack(side=tkinter.LEFT)
+            cancel = tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            )
+            cancel.pack(side=tkinter.LEFT, padx=(8, 0))
+            try:
+                window.iconbitmap('./resource/tmp_favoricon.ico')
+            except Exception:
+                pass
+            window.mainloop()
+
+        def cancel(self):
+            if self.UIObject.get('root') is not None:
+                self.UIObject['root'].destroy()
+
+        def confirm(self):
+            if self.done:
+                self.cancel()
+                return
+            try:
+                if self.mode == 'add':
+                    self._confirm_add()
+                elif self.mode == 'edit':
+                    self._confirm_edit()
+                else:
+                    self._confirm_delete()
+            except Exception as error:
+                messagebox.showerror('操作失败', str(error), parent=self.UIObject['root'])
+
+        def _text(self):
+            return self.UIObject['body'].get('1.0', tkinter.END)
+
+        def _confirm_add(self):
+            module = self.root_class._censor_module()
+            report = module.summarizeCensorAdds(self.root_class._censor_words(), self._text().splitlines())
+            if report['total'] == 0:
+                raise ValueError('请输入要添加的敏感词，每行一条')
+            if report['accepted']:
+                merged = list(self.root_class._censor_words()) + report['accepted']
+                self.root_class._write_censor_words(merged)
+            self._show_report(report)
+
+        def _confirm_edit(self):
+            module = self.root_class._censor_module()
+            word = module.normalizeCensorWord(self._text().strip())
+            if word is None:
+                raise ValueError('请输入 1 到 64 字的敏感词')
+            words = self.root_class._censor_words()
+            if self.word not in words:
+                raise ValueError('该敏感词不存在，请重新查询')
+            if word != self.word and word in words:
+                raise ValueError('这个敏感词已经在列表里了')
+            words[words.index(self.word)] = word
+            self.root_class._write_censor_words(words)
+            self.cancel()
+
+        def _confirm_delete(self):
+            words = self.root_class._censor_words()
+            if self.word not in words:
+                raise ValueError('该敏感词不存在，请重新查询')
+            words.remove(self.word)
+            self.root_class._write_censor_words(words)
+            self.cancel()
+
+        def _show_report(self, report):
+            self.done = True
+            lines = [
+                '共提交 %s 条' % report['total'],
+                '成功 %s 条' % report['success'],
+                '失败 %s 条' % report['failed'],
+                '',
+            ]
+            if report['failures']:
+                lines.append('失败原因：')
+                for item in report['failures']:
+                    lines.append('第 %s 行「%s」：%s' % (item['line'], item['text'], item['reason']))
+            else:
+                lines.append('没有失败项。')
+            body = self.UIObject['body']
+            body.delete('1.0', tkinter.END)
+            body.insert('1.0', '\n'.join(lines))
+            body.configure(state='disabled')
+            self.UIObject['root'].title('添加结果')
+
+    def _load_censor_import(self, file_path):
+        with open(file_path, 'r', encoding='utf-8') as handle:
+            text = handle.read()
+        try:
+            raw = json.loads(text)
+        except json.JSONDecodeError:
+            raw = text
+        if isinstance(raw, list):
+            return raw
+        if isinstance(raw, dict):
+            for key in ('censorList', 'words'):
+                if isinstance(raw.get(key), list):
+                    return raw[key]
+        if isinstance(raw, str):
+            return raw.splitlines()
+        raise ValueError('文件里没有读到敏感词，支持列表、换行文本或 censorList')
+
+    def censor_import(self):
+        file_path = filedialog.askopenfilename(
+            title='选择敏感词文件',
+            filetypes=[('JSON或文本', '*.json *.txt'), ('所有文件', '*.*')],
+            parent=self.UIObject['root'],
+        )
+        if not file_path:
+            return
+        try:
+            incoming = self._load_censor_import(file_path)
+            if not messagebox.askyesno(
+                '确认导入',
+                '将导入 %s 条敏感词，覆盖当前范围的自定义敏感词，继续吗？' % len(incoming),
+                parent=self.UIObject['root'],
+            ):
+                return
+            self._write_censor_words(incoming)
+            messagebox.showinfo('完成', '敏感词导入成功', parent=self.UIObject['root'])
+        except Exception as error:
+            messagebox.showerror('导入失败', '%s\n配置未更改' % error, parent=self.UIObject['root'])
+
+    def censor_reload(self):
+        if not messagebox.askyesno(
+            '确认刷新',
+            '确定要从文件重新加载敏感词和文本库吗？自定义词的未保存修改会被覆盖，文本库只重读、不改写。',
+            parent=self.UIObject['root'],
+        ):
+            return
+        try:
+            module = self._censor_module()
+            module.reloadConfigList(self.UIData['hash_now'])
+            if hasattr(module, 'reloadCensorFiles'):
+                module.reloadCensorFiles(self.UIData['hash_now'])
+            if hasattr(module, 'rebuildCensorByHash'):
+                module.rebuildCensorByHash(self.UIData['hash_now'])
+            self.fill_censor_tree()
+            messagebox.showinfo('完成', '敏感词和文本库已从文件重新加载', parent=self.UIObject['root'])
+        except Exception as error:
+            messagebox.showerror('刷新失败', str(error) + '，配置未更改', parent=self.UIObject['root'])
+
+    def censor_export(self):
+        file_path = filedialog.asksaveasfilename(
+            title='保存敏感词文件',
+            defaultextension='.json',
+            initialfile='censor.json',
+            filetypes=[('JSON文件', '*.json'), ('所有文件', '*.*')],
+            parent=self.UIObject['root'],
+        )
+        if not file_path:
+            return
+        try:
+            with open(file_path, 'w', encoding='utf-8') as handle:
+                json.dump({'censorList': self._censor_words()}, handle, ensure_ascii=False, indent=4)
+            messagebox.showinfo('完成', '敏感词导出成功', parent=self.UIObject['root'])
+        except Exception as error:
+            messagebox.showerror('导出失败', str(error), parent=self.UIObject['root'])
+
+    def _flag(self, name):
+        var = self.UIData.get(name)
+        return bool(var.get()) if var is not None else False
+
+    def _status_visible(self, modified, modified_only, unmodified_only):
+        if modified_only and not modified:
+            return False
+        if unmodified_only and modified:
+            return False
+        return True
+
+    def _exclusive_status(self, prefix, which, refresh):
+        current = prefix + '_' + which + '_only'
+        other_name = 'unmodified' if which == 'modified' else 'modified'
+        other = prefix + '_' + other_name + '_only'
+        if self.UIData[current].get():
+            self.UIData[other].set(0)
+        refresh()
+
+    def _list_filter_bar(self, parent, prefix, refresh, with_custom=False):
+        bar = tkinter.Frame(parent, bg=self.UIConfig['color_001'])
+        bar.grid(row=0, column=0, columnspan=2, sticky='ew', padx=(15, 15), pady=(8, 4))
+        tkinter.Label(
+            bar, text='查询', bg=self.UIConfig['color_001'], fg=self.UIConfig['color_004']
+        ).pack(side=tkinter.LEFT)
+        query = tkinter.StringVar()
+        self.UIData[prefix + '_query'] = query
+        entry = tkinter.Entry(bar, textvariable=query, width=24)
+        entry.pack(side=tkinter.LEFT, padx=(6, 8))
+        entry.bind('<KeyRelease>', lambda event: refresh())
+        self.UIData[prefix + '_modified_only'] = tkinter.IntVar()
+        self.UIData[prefix + '_unmodified_only'] = tkinter.IntVar()
+        tkinter.Checkbutton(
+            bar,
+            text='仅看已修改',
+            variable=self.UIData[prefix + '_modified_only'],
+            command=lambda: self._exclusive_status(prefix, 'modified', refresh),
+            bg=self.UIConfig['color_001'],
+            fg=self.UIConfig['color_004'],
+            activebackground=self.UIConfig['color_001'],
+            selectcolor=self.UIConfig['color_003'],
+        ).pack(side=tkinter.LEFT, padx=(0, 8))
+        tkinter.Checkbutton(
+            bar,
+            text='仅看未修改',
+            variable=self.UIData[prefix + '_unmodified_only'],
+            command=lambda: self._exclusive_status(prefix, 'unmodified', refresh),
+            bg=self.UIConfig['color_001'],
+            fg=self.UIConfig['color_004'],
+            activebackground=self.UIConfig['color_001'],
+            selectcolor=self.UIConfig['color_003'],
+        ).pack(side=tkinter.LEFT)
+        if with_custom:
+            self.UIData[prefix + '_custom_only'] = tkinter.IntVar()
+            tkinter.Checkbutton(
+                bar,
+                text='仅看自定义',
+                variable=self.UIData[prefix + '_custom_only'],
+                command=refresh,
+                bg=self.UIConfig['color_001'],
+                fg=self.UIConfig['color_004'],
+                activebackground=self.UIConfig['color_001'],
+                selectcolor=self.UIConfig['color_003'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+
+    def _reply_defaults(self):
+        bot_hash = self.UIData['hash_now']
+        cached = self.UIData.get('reply_defaults_cache')
+        if isinstance(cached, tuple) and cached[0] == bot_hash:
+            return cached[1]
+        defaults = self.default_reply_config_for_delete()
+        self.UIData['reply_defaults_cache'] = (bot_hash, defaults)
+        return defaults
+
+    def fill_str_tree(self):
+        tree = self.UIObject.get('tree_str')
+        if tree is None:
+            return
+        for item in tree.get_children():
+            tree.delete(item)
+        values = OlivaDiceCore.msgCustom.dictStrCustomDict.get(self.UIData['hash_now'], {})
+        if not isinstance(values, dict):
+            return
+        defaults = self._reply_defaults()
+        query = self.UIData.get('str_query')
+        needle = query.get().strip().lower() if query is not None else ''
+        modified_only = self._flag('str_modified_only')
+        unmodified_only = self._flag('str_unmodified_only')
+        for key, raw in values.items():
+            try:
+                if not isinstance(key, str) or not isinstance(raw, str):
+                    continue
+                note = OlivaDiceNativeGUI.msgCustom.dictStrCustomNote.get(key, '')
+                note = note.replace('\n', ' ').replace('\r', ' ')
+                default = defaults.get(key)
+                modified = not isinstance(default, str) or raw != default
+                if not self._status_visible(modified, modified_only, unmodified_only):
+                    continue
+                if needle and needle not in ('%s %s %s' % (key, note, raw)).lower():
+                    continue
+                shown = raw.replace('\r\n', r'\r\n').replace('\n', r'\n').replace('\r', r'\r')
+                tree.insert('', tkinter.END, text=key, values=(key, note, shown))
+            except Exception:
+                pass
+
+    def fill_console_tree(self):
+        tree = self.UIObject.get('tree_console')
+        if tree is None:
+            return
+        for item in tree.get_children():
+            tree.delete(item)
+        values = OlivaDiceCore.console.dictConsoleSwitch.get(self.UIData['hash_now'], {})
+        if not isinstance(values, dict):
+            return
+        template = OlivaDiceCore.console.dictConsoleSwitchTemplate.get('default', {})
+        query = self.UIData.get('console_query')
+        needle = query.get().strip().lower() if query is not None else ''
+        modified_only = self._flag('console_modified_only')
+        unmodified_only = self._flag('console_unmodified_only')
+        notes = OlivaDiceNativeGUI.msgCustom.dictConsoleSwitchNote
+        for key, raw in values.items():
+            try:
+                if type(raw) is not int:
+                    continue
+                note = notes.get(key, '') if isinstance(notes, dict) else ''
+                note = str(note).replace('\n', ' ').replace('\r', ' ')
+                modified = key not in template or raw != template.get(key)
+                if not self._status_visible(modified, modified_only, unmodified_only):
+                    continue
+                shown = str(raw)
+                if needle and needle not in ('%s %s %s' % (key, note, shown)).lower():
+                    continue
+                tree.insert('', tkinter.END, text=key, values=(key, note, shown))
+            except Exception:
+                pass
+
+    def _censor_files(self):
+        module = getattr(OlivaDiceCore, 'censorAPI', None)
+        if module is None or not hasattr(module, 'listCensorFiles'):
+            return []
+        try:
+            files = module.listCensorFiles(self.UIData['hash_now'])
+        except Exception:
+            return []
+        return files if isinstance(files, list) else []
+
+    def _toggle_censor_library(self):
+        if self.UIData['censor_library'].get() and not self._censor_files():
+            self.UIData['censor_library'].set(0)
+        self.fill_censor_tree()
+
+    def _sync_censor_library(self, files):
+        button = self.UIObject.get('check_censor_library')
+        combo = self.UIObject.get('combo_censor_file')
+        if button is None or combo is None:
+            return
+        names = [item.get('name') for item in files if isinstance(item, dict) and item.get('name')]
+        if not names:
+            self.UIData['censor_library'].set(0)
+            button.pack_forget()
+            combo.pack_forget()
+            return
+        if not button.winfo_ismapped():
+            button.pack(side=tkinter.LEFT, padx=(8, 0))
+        combo['values'] = names
+        if self.UIData['censor_file'].get() not in names:
+            self.UIData['censor_file'].set(names[0])
+        if self.UIData['censor_library'].get():
+            if not combo.winfo_ismapped():
+                combo.pack(side=tkinter.LEFT, padx=(6, 0))
+        else:
+            combo.pack_forget()
+
+    def _help_defaults(self, bot_hash):
+        data = OlivaDiceCore.helpDocData
+        template = getattr(data, 'dictHelpDocTemp', {}) or {}
+        defaults = {
+            key: value for key, value in template.items()
+            if isinstance(key, str) and isinstance(value, str)
+        }
+        root = OlivaDiceCore.data.dataDirRoot
+        directories = (
+            root + '/unity/extend/helpdoc',
+            root + '/' + bot_hash + '/extend/helpdoc',
+        )
+        for directory in directories:
+            if not os.path.isdir(directory):
+                continue
+            try:
+                names = os.listdir(directory)
+            except OSError:
+                continue
+            for name in names:
+                file_path = directory + '/' + name
+                if not os.path.isfile(file_path):
+                    continue
+                try:
+                    with open(file_path, 'r', encoding='utf-8') as handle:
+                        payload = json.loads(handle.read())
+                except Exception:
+                    continue
+                values = payload.get('helpdoc') if isinstance(payload, dict) else None
+                if not isinstance(values, dict):
+                    continue
+                for key, value in values.items():
+                    if isinstance(key, str) and isinstance(value, str):
+                        defaults[key] = value
+        return defaults
+
+    def _help_rows(self):
+        bot_hash = self.UIData['hash_now']
+        data = getattr(OlivaDiceCore, 'helpDocData', None)
+        if data is None:
+            return []
+        values = data.dictHelpDoc.get(bot_hash, {})
+        custom = data.dictHelpDocDefault.get(bot_hash, {})
+        if not isinstance(values, dict):
+            return []
+        if not isinstance(custom, dict):
+            custom = {}
+        defaults = self._help_defaults(bot_hash)
+        rows = []
+        for key, value in values.items():
+            if not isinstance(key, str) or not isinstance(value, str):
+                continue
+            default = defaults.get(key)
+            default = default if isinstance(default, str) else None
+            rows.append({
+                'key': key,
+                'value': value,
+                'custom': key in custom,
+                'modified': default is None or value != default,
+            })
+        return rows
+
+    def fill_help_tree(self):
+        tree = self.UIObject.get('tree_help')
+        if tree is None:
+            return
+        for item in tree.get_children():
+            tree.delete(item)
+        query = self.UIData.get('help_query')
+        needle = query.get().strip().lower() if query is not None else ''
+        modified_only = self._flag('help_modified_only')
+        unmodified_only = self._flag('help_unmodified_only')
+        custom_only = self._flag('help_custom_only')
+        for row in self._help_rows():
+            blob = '%s %s' % (row['key'], row['value'])
+            if needle and needle not in blob.lower():
+                continue
+            if custom_only and not row['custom']:
+                continue
+            if not self._status_visible(row['modified'], modified_only, unmodified_only):
+                continue
+            status = '已修改' if row['modified'] else '未修改'
+            if row['custom']:
+                status += ' · 自定义'
+            preview = row['value'].replace('\n', ' ').replace('\r', ' ')
+            tree.insert('', tkinter.END, text=row['key'], values=(row['key'], status, preview))
+
+    def _selected_help_key(self):
+        tree = self.UIObject.get('tree_help')
+        if tree is None or not tree.selection():
+            messagebox.showwarning('未选择', '请先选择一条帮助词条', parent=self.UIObject['root'])
+            return None
+        return tree.item(tree.selection()[0], 'text')
+
+    def help_add(self):
+        self.help_dialog_UI(self.UIObject['root'], self, 'add').start()
+
+    def help_edit(self):
+        key = self._selected_help_key()
+        if not key:
+            return
+        row = next((item for item in self._help_rows() if item['key'] == key), None)
+        value = row['value'] if row else ''
+        self.help_dialog_UI(self.UIObject['root'], self, 'edit', key, value).start()
+
+    def help_delete(self):
+        key = self._selected_help_key()
+        if not key:
+            return
+        row = next((item for item in self._help_rows() if item['key'] == key), None)
+        if row is None or not row['custom']:
+            messagebox.showerror('不能删除', '只能删除自定义词条', parent=self.UIObject['root'])
+            return
+        if not messagebox.askyesno('确认删除', '确定删除自定义词条「%s」吗？' % key, parent=self.UIObject['root']):
+            return
+        try:
+            self._write_help_doc(key, delete=True)
+            self.fill_help_tree()
+        except Exception as error:
+            messagebox.showerror('删除失败', str(error), parent=self.UIObject['root'])
+
+    def _write_help_doc(self, key, value=None, delete=False):
+        name = key.strip()
+        if not name or len(name) > 100 or (not delete and (not isinstance(value, str) or len(value) > 20000)):
+            raise ValueError('帮助词条格式无效')
+        bot_hash = self.UIData['hash_now']
+        data = OlivaDiceCore.helpDocData
+        values = data.dictHelpDoc.get(bot_hash)
+        custom = data.dictHelpDocDefault.get(bot_hash)
+        if not isinstance(values, dict):
+            values = {}
+            data.dictHelpDoc[bot_hash] = values
+        if not isinstance(custom, dict):
+            custom = {}
+            data.dictHelpDocDefault[bot_hash] = custom
+        if delete:
+            if name not in custom:
+                raise ValueError('只能删除自定义词条')
+            custom.pop(name, None)
+            values.pop(name, None)
+        else:
+            custom[name] = value
+            values[name] = value
+        OlivaDiceCore.helpDoc.saveHelpDocByBotHash(bot_hash)
+
+    def help_export(self):
+        file_path = filedialog.asksaveasfilename(
+            title='保存帮助文档',
+            defaultextension='.json',
+            initialfile='helpdoc.json',
+            filetypes=[('JSON文件', '*.json'), ('所有文件', '*.*')],
+            parent=self.UIObject['root'],
+        )
+        if not file_path:
+            return
+        custom = {
+            row['key']: row['value'] for row in self._help_rows() if row['custom']
+        }
+        try:
+            with open(file_path, 'w', encoding='utf-8') as handle:
+                json.dump(custom, handle, ensure_ascii=False, indent=4)
+            messagebox.showinfo('完成', '帮助文档导出成功', parent=self.UIObject['root'])
+        except Exception as error:
+            messagebox.showerror('导出失败', str(error), parent=self.UIObject['root'])
+
+    def help_import(self):
+        file_path = filedialog.askopenfilename(
+            title='选择帮助文档',
+            filetypes=[('JSON文件', '*.json'), ('所有文件', '*.*')],
+            parent=self.UIObject['root'],
+        )
+        if not file_path:
+            return
+        try:
+            with open(file_path, 'r', encoding='utf-8') as handle:
+                payload = json.loads(handle.read())
+            if not isinstance(payload, dict):
+                raise ValueError('帮助文档必须是 JSON 对象')
+            incoming = payload['helpdoc'] if isinstance(payload.get('helpdoc'), dict) else payload
+            if len(incoming) > 5000:
+                raise ValueError('帮助文档条目过多')
+            for key, value in incoming.items():
+                self._write_help_doc(key, value)
+            self.fill_help_tree()
+            messagebox.showinfo('完成', '帮助文档导入成功', parent=self.UIObject['root'])
+        except Exception as error:
+            messagebox.showerror('导入失败', '%s\n已写入的条目不会自动撤回' % error, parent=self.UIObject['root'])
+
+    def init_frame_help(self):
+        root = tkinter.Frame(self.UIObject['Notebook_root'])
+        root.configure(bg=self.UIConfig['color_001'], borderwidth=0)
+        root.grid(row=1, column=0, sticky='nsew')
+        root.grid_rowconfigure(0, weight=0)
+        root.grid_rowconfigure(1, weight=15)
+        root.grid_rowconfigure(2, weight=0)
+        root.grid_columnconfigure(0, weight=15)
+        self.UIObject['frame_help_root'] = root
+        self._list_filter_bar(root, 'help', self.fill_help_tree, with_custom=True)
+        tree = ttk.Treeview(root)
+        tree['show'] = 'headings'
+        tree['columns'] = ('KEY', 'STATUS', 'DATA')
+        tree.column('KEY', width=160)
+        tree.column('STATUS', width=120)
+        tree.column('DATA', width=420)
+        tree.heading('KEY', text='词条')
+        tree.heading('STATUS', text='状态')
+        tree.heading('DATA', text='内容')
+        tree.grid(row=1, column=0, sticky='nsew')
+        scroll = ttk.Scrollbar(root, orient='vertical', command=tree.yview)
+        tree.configure(yscrollcommand=scroll.set)
+        scroll.grid(row=1, column=1, sticky='nsw')
+        self.UIObject['tree_help'] = tree
+        buttons = tkinter.Frame(root, bg=self.UIConfig['color_001'])
+        buttons.grid(row=2, column=0, columnspan=2, sticky='ew', padx=(15, 15), pady=(8, 0))
+        self._page_button(buttons, 'buttom_add_help', '新建', self.help_add).pack(side=tkinter.LEFT, padx=(0, 5))
+        self._page_button(buttons, 'buttom_edit_help', '编辑', self.help_edit).pack(side=tkinter.LEFT, padx=(0, 5))
+        self._page_button(buttons, 'buttom_delete_help', '删除', self.help_delete).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._page_button(buttons, 'buttom_import_help', '导入词条', self.help_import).pack(
+            side=tkinter.LEFT, padx=(0, 5)
+        )
+        self._page_button(buttons, 'buttom_export_help', '导出词条', self.help_export).pack(side=tkinter.LEFT)
+
+    def _page_button(self, parent, name, text, command):
+        button = tkinter.Button(
+            parent,
+            text=text,
+            command=command,
+            bd=0,
+            activebackground=self.UIConfig['color_002'],
+            activeforeground=self.UIConfig['color_001'],
+            bg=self.UIConfig['color_003'],
+            fg=self.UIConfig['color_004'],
+            relief='groove',
+            height=2,
+            width=12,
+        )
+        button.bind('<Enter>', lambda event, key=name: self.buttom_action(key, '<Enter>'))
+        button.bind('<Leave>', lambda event, key=name: self.buttom_action(key, '<Leave>'))
+        self.UIObject[name] = button
+        return button
+
+    class help_dialog_UI(object):
+        def __init__(self, root_obj, root_class, mode, key='', value=''):
+            self.root = root_obj
+            self.root_class = root_class
+            self.mode = mode
+            self.key = key
+            self.value = value
+            self.UIObject = {}
+            self.UIConfig = {}
+            self.UIConfig.update(dictColorContext)
+
+        def start(self):
+            window = create_window(self.root)
+            self.UIObject['root'] = window
+            window.title('新建帮助词条' if self.mode == 'add' else '编辑帮助词条')
+            window.geometry('520x460')
+            window.minsize(480, 420)
+            window.resizable(width=True, height=True)
+            window.grid_rowconfigure(1, weight=15)
+            window.grid_columnconfigure(0, weight=15)
+            window.configure(bg=self.UIConfig['color_001'])
+            window.protocol('WM_DELETE_WINDOW', self.cancel)
+            note = '词条名称和内容都会保存到当前账号。' if self.mode == 'add' else '修改后会记成当前账号的自定义词条。'
+            label = tkinter.Label(window, text=note, font=('等线', 12, 'bold'), anchor='w')
+            label.configure(bg=self.UIConfig['color_001'], fg=self.UIConfig['color_004'])
+            label.grid(row=0, column=0, sticky='ew', padx=(15, 15), pady=(15, 0))
+            body = tkinter.Frame(window, bg=self.UIConfig['color_001'])
+            body.grid(row=1, column=0, sticky='nsew', padx=(15, 15), pady=(8, 8))
+            body.grid_rowconfigure(2, weight=15)
+            body.grid_columnconfigure(0, weight=15)
+            tkinter.Label(
+                body, text='词条名称', bg=self.UIConfig['color_001'], fg=self.UIConfig['color_004']
+            ).grid(row=0, column=0, sticky='w')
+            self.key_var = tkinter.StringVar(value=self.key)
+            key_entry = tkinter.Entry(body, textvariable=self.key_var)
+            if self.mode == 'edit':
+                key_entry.configure(state='readonly')
+            key_entry.grid(row=1, column=0, sticky='ew', pady=(4, 8))
+            text = tkinter.Text(body, wrap=tkinter.WORD)
+            text.configure(
+                bg=self.UIConfig['color_004'], fg=self.UIConfig['color_005'], bd=0,
+                font=(None, 12), padx=8, pady=8,
+            )
+            text.insert('1.0', self.value)
+            text.grid(row=2, column=0, sticky='nsew')
+            self.UIObject['body'] = text
+            buttons = tkinter.Frame(window, bg=self.UIConfig['color_001'])
+            buttons.grid(row=2, column=0, sticky='e', padx=(15, 15), pady=(0, 15))
+            tkinter.Button(
+                buttons, text='保存', command=self.confirm, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_002'], fg=self.UIConfig['color_001'],
+            ).pack(side=tkinter.LEFT)
+            tkinter.Button(
+                buttons, text='取消', command=self.cancel, bd=0, width=10, height=2,
+                bg=self.UIConfig['color_003'], fg=self.UIConfig['color_004'],
+            ).pack(side=tkinter.LEFT, padx=(8, 0))
+            try:
+                window.iconbitmap('./resource/tmp_favoricon.ico')
+            except Exception:
+                pass
+            window.mainloop()
+
+        def cancel(self):
+            if self.UIObject.get('root') is not None:
+                self.UIObject['root'].destroy()
+
+        def confirm(self):
+            try:
+                self.root_class._write_help_doc(
+                    self.key_var.get(), self.UIObject['body'].get('1.0', tkinter.END).rstrip('\n')
+                )
+            except Exception as error:
+                messagebox.showerror('保存失败', str(error), parent=self.UIObject['root'])
+                return
+            self.root_class.fill_help_tree()
+            self.cancel()
 
     def init_data_deck(self):
         self.init_data_deck_local()
